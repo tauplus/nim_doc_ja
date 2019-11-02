@@ -327,6 +327,88 @@ a"b
 `Rune`型はUnicode文字のために用いられ、任意のUnicode文字を表すことができます。
 `Rune`は[unicodeモジュール](https://nim-lang.org/docs/unicode.html)で宣言されています。
 
+### 数値リテラル(Numerical constants)
+数値リテラルは単一のタイプで、以下の形式をとります。
+```
+hexdigit = digit | 'A'..'F' | 'a'..'f'
+octdigit = '0'..'7'
+bindigit = '0'..'1'
+HEX_LIT = '0' ('x' | 'X' ) hexdigit ( ['_'] hexdigit )*
+DEC_LIT = digit ( ['_'] digit )*
+OCT_LIT = '0' 'o' octdigit ( ['_'] octdigit )*
+BIN_LIT = '0' ('b' | 'B' ) bindigit ( ['_'] bindigit )*
+
+INT_LIT = HEX_LIT
+        | DEC_LIT
+        | OCT_LIT
+        | BIN_LIT
+
+INT8_LIT = INT_LIT ['\''] ('i' | 'I') '8'
+INT16_LIT = INT_LIT ['\''] ('i' | 'I') '16'
+INT32_LIT = INT_LIT ['\''] ('i' | 'I') '32'
+INT64_LIT = INT_LIT ['\''] ('i' | 'I') '64'
+
+UINT_LIT = INT_LIT ['\''] ('u' | 'U')
+UINT8_LIT = INT_LIT ['\''] ('u' | 'U') '8'
+UINT16_LIT = INT_LIT ['\''] ('u' | 'U') '16'
+UINT32_LIT = INT_LIT ['\''] ('u' | 'U') '32'
+UINT64_LIT = INT_LIT ['\''] ('u' | 'U') '64'
+
+exponent = ('e' | 'E' ) ['+' | '-'] digit ( ['_'] digit )*
+FLOAT_LIT = digit (['_'] digit)* (('.' digit (['_'] digit)* [exponent]) |exponent)
+FLOAT32_SUFFIX = ('f' | 'F') ['32']
+FLOAT32_LIT = HEX_LIT '\'' FLOAT32_SUFFIX
+            | (FLOAT_LIT | DEC_LIT | OCT_LIT | BIN_LIT) ['\''] FLOAT32_SUFFIX
+FLOAT64_SUFFIX = ( ('f' | 'F') '64' ) | 'd' | 'D'
+FLOAT64_LIT = HEX_LIT '\'' FLOAT64_SUFFIX
+            | (FLOAT_LIT | DEC_LIT | OCT_LIT | BIN_LIT) ['\''] FLOAT64_SUFFIX
+```
+数値リテラルは可読性のために`_`を含めることができます。
+整数及び浮動小数点リテラルは10進数(no prefix)、2進数(prefix `0b`)、8進数(prefix `0o`)、16進数(prefix `0x`)で記述できます。
+
+定義されている各数値型にはリテラルが存在します。
+アポストロフィ`'`で始まるサフィックスは、型サフィックスと呼ばれます。
+型サフィックスのない数値リテラルは`.`または`E|e`がなければ整数型、あれば`float`型です。
+この整数型はリテラルが`low(i32)...high(i32)`であれば`int`型、そうでなければ`int64`型です。
+表記の利便性のため、`'`がないことで曖昧にならない場合は型サフィックスの`'`はオプションです。
+(型サフィックスを持つ16進数浮動小数点のみが曖昧になります)
+(訳者注:16進数は浮動小数点の型サフィックス`d|f|D|F`を含むため、数値部分とサフィックスを区別する必要がある)
+
+型サフィックスは以下である。
+
+|型サフィックス|結果のリテラルタイプ|
+|:---|:---|
+|'i8|int8|
+|'i16|int16|
+|'i32|int32|
+|'i64|int64|
+|'u|uint|
+|'u8|uint8|
+|'u16|uint16|
+|'u32|uint32|
+|'u64|uint64|
+|'f|float32|
+|'d|float64|
+|'f32|float32|
+|'f64|float64|
+
+浮動小数点リテラルは、2進,8進,16進表記を使用できます。
+`0B0_10001110100_0000101001000111101011101111111011000101001101001001'f64`は、IEEE浮動小数点標準に従って約1.72826e35です。
+
+リテラルは、データ型に適合するように境界がチェックされます。
+10進数以外のリテラルは主にフラグとビットパターン表現に使用されるため、値の範囲ではなくビット幅で境界チェックが行われます。
+リテラルがデータ型のビット幅に適合する場合、受け入れられます。
+したがって、0b10000000'u8 == 0x80'u8 == 128ですが、0b10000000'i8 == 0x80'i8 == -1となり、オーバーフローエラーとなりません。
+
+
+
+
+
+
+
+
+
+
 
 
 
