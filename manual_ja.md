@@ -811,11 +811,15 @@ static:
 ```
 
 ## コンパイル時実行の制限
+コンパイル時に実行されるNimコードは、次の言語機能を使用できません。
 
+- methods
+- closure iterators
+- キャスト演算子
+- reference (pointer) types
+- the FFI
 
-
-
-
+これらの制限の一部または全ては今後、解除される可能性があります。
 
 ## Pragmas
 
