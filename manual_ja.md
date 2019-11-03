@@ -762,24 +762,53 @@ doAssert s == "qppqpq"
 ```
 根拠:これは仮想的な代替案よりも実装がはるかに簡単です。
 
+### 定数と定数式
+定数は定数式の値にバインドされているシンボルです。
+以下のカテゴリの値と演算のみに依存するように制限されています。
+それは、これらが言語に組み込まれているか定数式のセマンティック解析の前に宣言および評価されるためです。
 
+- リテラル
+- 組み込み演算子
+- 宣言済み定数とコンパイル時変数
+- 宣言済みマクロとテンプレート
+- コンパイル時変数を変更するよりも大きな副作用を持たない宣言済みプロシージャ
 
+定数式にはコンパイル時にサポートされるNimの機能(次節で説明)を内部的に使用するコードブロックを含めることができます。
+そのようなコードブロック内で、変数を宣言したのちに読み取り、更新をするか、変数を宣言して変数を変更するプロシージャに渡すことができます。
+ただし、そのようなブロック内のコードは、ブロック外の値と演算を参照するための上記の制限に従う必要があります。
 
+他の静的型付け言語から来た人は驚くかもしれせんが、コンパイル時変数にアクセスして変更する機能は定数式に柔軟性を追加します。
+例えば、次のコードはコンパイル時にフィボナッチ数列の始まり部分を出力します。
+（これは定数の定義における柔軟性のデモンストレーションであり、この問題を解決するための推奨スタイルではありません！）
+```nim
+import strformat
 
+var fib_n {.compileTime.}: int
+var fib_prev {.compileTime.}: int
+var fib_prev_prev {.compileTime.}: int
 
+proc next_fib(): int =
+  result = if fib_n < 2:
+    fib_n
+  else:
+    fib_prev_prev + fib_prev
+  inc(fib_n)
+  fib_prev_prev = fib_prev
+  fib_prev = result
 
+const f0 = next_fib()
+const f1 = next_fib()
 
+const display_fib = block:
+  const f2 = next_fib()
+  var result = fmt"Fibonacci sequence: {f0}, {f1}, {f2}"
+  for i in 3..12:
+    add(result, fmt", {next_fib()}")
+  result
 
-
-
-
-
-
-
-
-
-
-
+static:
+  echo display_fib
+```
 
 ## コンパイル時実行の制限
 
