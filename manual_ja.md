@@ -692,6 +692,87 @@ stmt = (IND{>} complexOrSimpleStmt^+(IND{=} / ';') DED)
      / simpleStmt ^+ ';'
 ```
 
+### 評価の順序(Order of evaluation)
+評価の順序は、他のほとんどの言語と同様に、厳密に左から右、内から外です。
+```nim
+var s = ""
+
+proc p(arg: int): int =
+  s.add $arg
+  result = arg
+
+discard p(p(1) + p(2))
+
+doAssert s == "123"
+```
+
+代入は特別ではありません。左辺の式は右辺の前に評価されます。
+```nim
+var v = 0
+proc getI(): int =
+  result = v
+  inc v
+
+var a, b: array[0..2, int]
+
+proc someCopy(a: var int; b: int) = a = b
+
+a[getI()] = getI()
+
+doAssert a == [1, 0, 0]
+
+v = 0
+someCopy(b[getI()], getI())
+
+doAssert b == [1, 0, 0]
+```
+根拠:assignment演算子とassignment-like演算子の一貫性により、`a = b`は`performSomeCopy(a, b)`と読むことができます。
+
+ただし、「評価の順序」の概念は、コードが正規化された後にのみ適用されます。
+正規化には、テンプレート展開と名前付きパラメーターとして渡された引数の並べ替えが含まれます。
+
+```nim
+var s = ""
+
+proc p(): int =
+  s.add "p"
+  result = 5
+
+proc q(): int =
+  s.add "q"
+  result = 3
+
+# テンプレートの展開により、bはaよりも先に評価されます。
+# expansion's semantics.
+template swapArgs(a, b): untyped =
+  b + a
+
+# "q() - p()"は"p() + q()"よりも先に評価されます。
+doAssert swapArgs(p() + q(), q() - p()) == 6
+doAssert s == "qppq"
+
+# 評価の順序は名前付きパラメータの影響を受けません。
+proc construct(first, second: int) =
+  discard
+
+# "p"は"q"よりも先に評価されます!
+construct(second = q(), first = p())
+
+doAssert s == "qppqpq"
+```
+根拠:これは仮想的な代替案よりも実装がはるかに簡単です。
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
