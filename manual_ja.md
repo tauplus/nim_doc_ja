@@ -912,12 +912,22 @@ myInt16 + 2i32   # of type ``int32``
 ただし、リテラルの値が小さい型に適合する場合、他の暗黙的な変換よりも安価なので`int`リテラルは暗黙的に小さい整数型に変換されます。
 従って、`myInt16 + 34`は`int16`となります。
 
+### Subrange型(Subrange types)
+subrange型はその基本型となる順序型または浮動小数点型の範囲の値を持ちます。
+subrange型を定義するには、その制限値（型の最小値と最大値）を指定する必要があります。
+例えば、
+```nim
+type
+  Subrange = range[0..5]
+  PositiveFloat = range[0.0..Inf]
+```
+`Subrange`は0から5の整数のみをとれるsubrange型である。
+`PositiveFloat`は0以上の浮動小数点のsubrange型を定義します。
+NaNはいかなる浮動小数点型のSubrange型にも属しません。
+subrange型の変数にそれ以外の値を代入すると、実行時エラーとなります(セマンティック解析中に決まる場合は静的エラー)。
+ベース型からそのsubrange型の1つへの代入（およびその逆）が許可されます。
 
-
-
-
-
-
+subrange型のサイズは、そのベース型と同じサイズです（`Subrange`の例では`int`型）。
 
 
 ## Pragmas
