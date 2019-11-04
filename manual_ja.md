@@ -830,7 +830,7 @@ Nimは静的型付けされます。
 主な型クラスは以下の通りです。
 
 - 順序型(整数型、ブール型、文字型、列挙型(及びそれらの部分範囲型)で構成されます)
-- 浮動小数点数型
+- 浮動小数点型
 - 文字列型
 - 構造型(structured types)
 - 参照(ポインタ)型
@@ -928,6 +928,66 @@ subrange型の変数にそれ以外の値を代入すると、実行時エラー
 ベース型からそのsubrange型の1つへの代入（およびその逆）が許可されます。
 
 subrange型のサイズは、そのベース型と同じサイズです（`Subrange`の例では`int`型）。
+
+### 定義済み浮動小数点型(Pre-defined floating point types)
+次の浮動小数点型が定義済みです。
+
+- `float`
+一般的な浮動小数点型。以前はそのサイズはプラットフォームに依存していましたが、現在は常に`float64`にマップされます。このタイプは一般的に使用されるべきです。
+
+- floatXX
+実装は、この命名スキームを使用してXXビット浮動小数点タイプを定義できます(例:`float64`は64ビット幅浮動小数点型です)。
+現在の実装は、`float32`と`float64`をサポートしています。これらのタイプのリテラルには、サフィックス'fXXが付いています。
+
+異なる種類の浮動小数点型の式で自動型変換が実行されます。
+詳細については、[変換可能な関係](#変換可能な関係Convertible-relation)を参照してください。
+浮動小数点型で実行される算術演算は、IEEE標準に従います。
+整数型は浮動小数点型に自動的に変換されず、その逆も行われません。
+
+IEEE標準では、以下の5種類の浮動小数点例外を定義しています。
+
+- 無効(invalid) : 0.0/0.0,sqrt(-1.0),log(-37.8)などの数学的に無効なオペランドを使用した演算。
+- ゼロ除算 : 1.0/0.0などの除数がゼロで、被除数が有限なゼロ以外の数値である演算。
+- オーバーフロー : MAXDOUBLE+0.0000000000001e308などの指数の範囲を超える結果となる演算。
+- アンダーフロー : MINDOUBLE * MINDOUBLEなどの通常の数値として表現するには小さすぎる結果となる演算。
+- 不正確(inexact) : 2.0/3.0,log(1.1),0.1などの任意精度で表現できない結果となる演算。
+
+IEEE例外は実行中に無視されるか、Nimの例外(FloatInvalidOpError,FloatDivByZeroError,FloatOverflowError,FloatUnderflowError,FloatInexactError)にマップされます。
+これらの例外はFloatingPointError基本クラスから継承されます。
+
+Nimは、IEEE例外を無視するかNim例外をトラップするかを制御するプラグマnanChecksおよびinfChecksを提供します。
+```nim
+{.nanChecks: on, infChecks: on.}
+var a = 1.0
+var b = 0.0
+echo b / b # raises FloatInvalidOpError
+echo a / b # raises FloatOverflowError
+```
+現在の実装では、`FloatDivByZeroError`と`FloatInexactError`は発生しません。
+`FloatDivByZeroError`の代わりに`FloatOverflowError`が発生します。
+nanChecksプラグマとinfChecksプラグマの組み合わせのショートカットであるfloatChecksプラグマもありますが、デフォルトでオフになっています
+
+`floatChecks`プラグマの影響を受ける操作は、浮動小数点型の`+`,`-`,`*`,`/`演算子のみです。
+
+実装では、セマンティック解析中に浮動小数点値を評価するために利用可能な最大精度を常に使用する必要があります。
+これは、`0.09'f32 + 0.01'f32 == 0.09'f64 + 0.01'f64`のような定数畳み込み中に評価される式が真であることを意味します。
+
+
+
+
+
+### 変換可能な関係(Convertible relation)
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## Pragmas
