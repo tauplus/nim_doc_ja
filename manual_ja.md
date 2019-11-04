@@ -990,8 +990,13 @@ while p != nil and p.name != "xyz":
 ```
 bool型のサイズは1バイトです。
 
-
-
+### 文字型(Character type)
+文字型は、Nimではcharという名前で、サイズは1バイトです。
+従って、UTF-8文字を表すことはできませんが、その一部を表します。
+この理由は効率性です：圧倒的多数のユースケースのために、UTF-8は特別に設計されているため、結果のプログラムは依然としてUTF-8を適切に処理します。
+もう1つの理由は、多くのアルゴリズムが依存している`array[char,int]`または`set[char]`を効率的にサポートできるからです。
+`Rune`型はUnicode文字のために用いられ、任意のUnicode文字を表すことができます。
+`Rune`は[unicodeモジュール](https://nim-lang.org/docs/unicode.html)で宣言されています。
 
 
 
