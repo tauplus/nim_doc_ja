@@ -1109,6 +1109,42 @@ else: write(stdout, "invalid command line option!\n")
 インデックス演算`s[i]`は、i番目のunicharではなく、`s`のi番目のcharを意味します。
 unicodeモジュールのイテレータ`rune`は、すべてのUnicode文字のイテレーションに使用できます。
 
+### cstring型(cstring type)
+`compatible string`の意味を持つ`cstring`型はコンパイルのバックエンドのための文字列のネイティブ表現です。
+Cバックエンドの場合、`cstring`型は、Ansi Cの`char *`型と互換性のあるゼロ終端char配列へのポインタを表します。
+その主な目的は、Cとの簡単なインターフェイスにあります。
+インデックス演算`s[i]`は`s`のi番目の文字を意味します。
+ただし、`cstring`は境界チェックされないため、インデックス演算は安全ではありません。
+
+Nimの`string`は便宜上、暗黙的に`cstring`に変換可能です。Nim`string`がCスタイルの可変長プロシージャに渡されると、暗黙的に`cstring`に変換されます。
+```nim
+proc printf(formatstr: cstring) {.importc: "printf", varargs,
+                                  header: "<stdio.h>".}
+
+printf("This works %s", "as expected")
+```
+変換は暗黙的ですが、安全ではありません。
+ガベージコレクターは`cstring`をルートとは見なさないため、基になるメモリを回収する場合があります。
+しかし実際には、GCはスタックルートを保守的に考慮するため、これはほとんど起こりません。
+組み込みプロシージャ`GC_ref`および`GC_unref`を使用して、まれに文字列データが機能しない場合に備えて文字列データを保持できます。
+
+`$`プロシージャーはcstringに対してstringを返すように定義されています。
+従って、cstringからstringを得るには以下のようにします。
+```nim
+var str: string = "Hello!"
+var cstr: cstring = str
+var newstr: string = $cstr
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
