@@ -998,6 +998,68 @@ bool型のサイズは1バイトです。
 `Rune`型はUnicode文字のために用いられ、任意のUnicode文字を表すことができます。
 `Rune`は[unicodeモジュール](https://nim-lang.org/docs/unicode.html)で宣言されています。
 
+### 列挙型(Enumeration types)
+列挙型は、指定された値で構成される値を持つ新しい型を定義します。値は順序付けられています。例えば
+```nim
+type
+  Direction = enum
+    north, east, south, west
+```
+これは以下のことが成り立ちます。
+```nim
+ord(north) == 0
+ord(east) == 1
+ord(south) == 2
+ord(west) == 3
+
+# Also allowed:
+ord(Direction.west) == 3
+```
+従って、north < east < south < westです。
+`north`などの代わりに、列挙値はそれが存在する列挙型で修飾し`Direction.north`とも書けます。
+
+他のプログラミング言語とのインターフェイスを改善するために、列挙型のフィールドに明示的な序数値を割り当てることができます。
+ただし、序数値は昇順である必要があります。
+順序値が明示的に指定されていないフィールドには、前のフィールドの値+1が割り当てられます
+
+明示的に順序付けられた列挙型には、抜けがある場合があります。
+```nim
+type
+  TokenType = enum
+    a = 2, b = 4, c = 89 # holes are valid
+```
+ただし、これは序数ではないため、これらの列挙型を配列のインデックス型として使用することはできません。
+プロシージャ`inc`,`dec`,`succ`,`pred`も使用できません。
+
+コンパイラーは、列挙型に対して組み込みのstringify演算子`$`をサポートします。
+stringifyの結果は、使用する文字列値を明示的に指定することで制御できます。
+```nim
+type
+  MyEnum = enum
+    valueA = (0, "my value A"),
+    valueB = "value B",
+    valueC = 2,
+    valueD = (3, "abc")
+```
+例からわかるように、タプルを使用してフィールドの序数値とその文字列値の両方を指定することができまし、それらの内の1つだけを指定することもできます。
+
+列挙型は、最後の試行としてのみ照会される特別なモジュール固有の隠されたスコープにフィールドが追加されるように、`pure`プラグマでマークできます。
+このスコープには、あいまいでないシンボルのみが追加されます。
+ただし、これらには`MyEnum.value`のように型修飾を記述することで常にアクセスできます。
+```nim
+type
+  MyEnum {.pure.} = enum
+    valueA, valueB, valueC, valueD, amb
+  
+  OtherEnum {.pure.} = enum
+    valueX, valueY, valueZ, amb
+
+
+echo valueA # MyEnum.valueA
+echo amb    # Error: MyEnum.amb であるか OtherEnum.amb であるか明確でない
+echo MyEnum.amb # OK.
+```
+列挙型でビットフィールドを実装するには[ビットフィールド](#ビットフィールドBit-fields)を参照してください
 
 
 
@@ -1008,6 +1070,12 @@ bool型のサイズは1バイトです。
 
 
 
+
+
+
+
+
+### ビットフィールド(Bit fields)
 
 ### 変換可能な関係(Convertible relation)
 
