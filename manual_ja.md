@@ -1224,6 +1224,58 @@ testOpenArray([1,2,3])  # array[]
 testOpenArray(@[1,2,3]) # seq[]
 ```
 
+### 可変長引数(Varargs)
+`varargs` パラメータはプロシージャーに可変数の引数を渡すことができます。
+コンパイラは引数リストを暗黙的に配列に変換します。
+
+```nim
+proc myWriteln(f: File, a: varargs[string]) =
+  for s in items(a):
+    write(f, s)
+  write(f, "\n")
+
+myWriteln(stdout, "abc", "def", "xyz")
+# is transformed to:
+myWriteln(stdout, ["abc", "def", "xyz"])
+```
+この変換は、varargsパラメーターがプロシージャヘッダーの最後のパラメーターである場合にのみ行われます。
+下記のコンテキストで型変換を実行することもできます。
+```nim
+proc myWriteln(f: File, a: varargs[string, `$`]) =
+  for s in items(a):
+    write(f, s)
+  write(f, "\n")
+
+myWriteln(stdout, 123, "abc", 4.0)
+# is transformed to:
+myWriteln(stdout, [$123, $"def", $4.0])
+```
+この例では、パラメーター`a`に渡される引数に`$`が適用されます(`$`は文字列には適用されません)。
+
+`varargs`パラメーターに渡された明示的な配列コンストラクターは、別の暗黙的な配列構築にラップされないことに注意してください。
+```nim
+proc takeV[T](a: varargs[T]) = discard
+
+takeV([123, 2, 1]) # Tの型は intでなく、intの配列です
+```
+
+`varargs[typed]`は特別に扱われます。
+これは、任意の型の引数の変数リストに一致しますが、常に暗黙的な配列を構築します。
+これは、組み込みプロシージャー`echo`が期待される動作を行うために必要です。
+```nim
+proc echo*(x: varargs[typed, `$`]) {...}
+
+echo @[1, 2, 3]
+# prints "@[1, 2, 3]" and not "123"
+```
+
+
+
+
+
+
+
+
 
 
 
