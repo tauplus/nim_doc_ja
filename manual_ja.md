@@ -1357,8 +1357,14 @@ assert(student of Person) # also true
 継承元を持たないオブジェクトは暗黙的にfinalであるため、非表示型フィールドはありません。
 `inheritable`プラグマを使用して、`system.RootObj`とは別に新しいオブジェクトルートを導入できます。
 
-
-
+### オブジェクト構築(Object construction)
+オブジェクトは、構文`T(fieldA: valueA, fieldB: valueB, ...)`を持つオブジェクト構築式を使用して作成することもできます。
+ここで、`T`はオブジェクト型または`ref`オブジェクト型です。
+```nim
+var student = Student(name: "Anton", age: 5, id: 3)
+```
+タプルとは異なり、オブジェクトには値とともにフィールド名が必要です。
+`ref`オブジェクトタイプの場合、`system.new`が暗黙的に呼び出されます。
 
 
 
