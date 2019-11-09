@@ -1291,6 +1291,86 @@ typedef struct {
 
 将来の方向性：未チェックの配列でGCされたメモリを許可し、GCが配列の実行時サイズを決定する方法についての明示的な注釈が必要です。
 
+### タプルとオブジェクト型(Tuples and object types)
+タプルまたはオブジェクト型の変数は、異種のストレージコンテナです。
+タプルまたはオブジェクトは、型のさまざまな名前付きフィールドを定義します。
+タプルは、フィールドの順序も定義します。
+タプルは、オーバーヘッドがなく、抽象化の可能性がほとんどない異種ストレージ型を対象としています。
+コンストラクター`()`を使用してタプルを作成できます。
+コンストラクター内のフィールドの順序は、タプルの定義の順序と一致する必要があります。
+同じ型の同じフィールドを同じ順序で指定する場合、異なるタプル型は同値です。
+フィールドの名前も同一でなければなりません。
+
+```nim
+type
+  Person = tuple[name: string, age: int] # type representing a person:
+                                         # a person consists of a name
+                                         # and an age
+var
+  person: Person
+person = (name: "Peter", age: 30)
+# the same, but less readable:
+person = ("Peter", 30)
+```
+
+括弧と末尾のコンマを使用して、名前のないフィールドが1つあるタプルを作成できます。
+```nim
+proc echoUnaryTuple(a: (int,)) =
+  echo a[0]
+
+echoUnaryTuple (1,)
+```
+実際、すべてのタプルの構築には末尾のコンマが許可されます。
+
+実装は、最高のアクセスパフォーマンスのためにフィールドを調整します。
+アライメントは、Cコンパイラが行う方法と互換性があります
+
+`object`宣言との一貫性を保つために、`type`セクションのタプルは`[]`の代わりにインデントで定義することもできます。
+```nim
+type
+  Person = tuple   # type representing a person
+    name: string   # a person consists of a name
+    age: natural   # and an age
+```
+
+オブジェクトは、タプルにはない多くの機能を提供します。
+オブジェクトは、継承と情報の隠蔽を提供します。
+オブジェクトは実行時に型にアクセスできるため、`of`演算子を使用してオブジェクトの型を判別できます。
+`of`演算子はJavaの`instanceof`に似ています。
+```nim
+type
+  Person = object of RootObj
+    name*: string   # *は`name`が他のモジュールからアクセスできることを意味します。
+    age: int        # *がないため、フィールドは隠蔽されます
+  
+  Student = ref object of Person # a student is a person
+    id: int                      # with an id field
+
+var
+  student: Student
+  person: Person
+assert(student of Student) # is true
+assert(student of Person) # also true
+```
+定義モジュールの外部から見えるべきオブジェクトフィールドは、*でマークする必要があります。
+タプルとは対照的に、異なるオブジェクト型が同値になることはありません。
+継承元を持たないオブジェクトは暗黙的にfinalであるため、非表示型フィールドはありません。
+`inheritable`プラグマを使用して、`system.RootObj`とは別に新しいオブジェクトルートを導入できます。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
