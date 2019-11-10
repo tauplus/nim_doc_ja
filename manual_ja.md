@@ -1366,7 +1366,95 @@ var student = Student(name: "Anton", age: 5, id: 3)
 タプルとは異なり、オブジェクトには値とともにフィールド名が必要です。
 `ref`オブジェクトタイプの場合、`system.new`が暗黙的に呼び出されます。
 
+### オブジェクトバリアント(Object variants)
+多くの場合、単純なバリアント型が必要な特定の状況では、オブジェクト階層が過剰になります。
+オブジェクトバリアントは、実行時の型の柔軟性に使用される列挙型によって識別されるタグ付き共用体であり、他の言語に見られる和型と代数データ型(ADTs)の概念を反映しています。
 
+例
+```nim
+# これは、抽象構文ツリーをNimのでモデル化する方法の例である
+type
+  NodeKind = enum  # the different node types
+    nkInt,          # a leaf with an integer value
+    nkFloat,        # a leaf with a float value
+    nkString,       # a leaf with a string value
+    nkAdd,          # an addition
+    nkSub,          # a subtraction
+    nkIf            # an if statement
+  Node = ref NodeObj
+  NodeObj = object
+    case kind: NodeKind  # ``kind``フィールドは判別子です
+    of nkInt: intVal: int
+    of nkFloat: floatVal: float
+    of nkString: strVal: string
+    of nkAdd, nkSub:
+      leftOp, rightOp: Node
+    of nkIf:
+      condition, thenPart, elsePart: Node
+
+# create a new case object:
+var n = Node(kind: nkIf, condition: nil)
+# ``nkIf``ブランチがアクティブであるためn.thenPartへのアクセスは有効:
+n.thenPart = Node(kind: nkFloat, floatVal: 2.0)
+
+# 次のステートメントはn.kindの値が適合せず、 `` nkString``ブランチがアクティブではないため、
+# `FieldError`例外を発生させます:
+n.strVal = ""
+
+# 無効: アクティブなオブジェクトブランチを変更しようとしています:
+n.kind = nkInt
+
+var x = Node(kind: nkAdd, leftOp: Node(kind: nkInt, intVal: 4),
+                          rightOp: Node(kind: nkInt, intVal: 2))
+# 有効: アクティブなオブジェクトブランチを変更していません:
+x.kind = nkSub
+```
+この例からわかるように、オブジェクト階層の利点は、異なるオブジェクトタイプ間でキャストする必要がないことです。
+ただし、無効なオブジェクトフィールドにアクセスすると例外が発生します。
+
+オブジェクト宣言の`case`の構文は、`case`ステートメントの構文に厳密に従います。
+`case`セクションのブランチもインデントされる場合があります。
+
+この例では、`kind`フィールドは判別子(discriminator)と呼ばれます。
+安全のために、アドレスを取得することはできず、割り当ては制限されます。
+新しい値によってアクティブなオブジェクトブランチが変更されてはなりません。
+また、オブジェクトの構築中に特定のブランチのフィールドを指定する場合、対応する判別子の値を定数式として指定する必要があります。
+
+アクティブなオブジェクトブランチを変更する代わりに、メモリ内の古いオブジェクトを完全に新しいオブジェクトに置き換えます。
+```nim
+var x = Node(kind: nkAdd, leftOp: Node(kind: nkInt, intVal: 4),
+                          rightOp: Node(kind: nkInt, intVal: 2))
+# change the node's contents:
+x[] = NodeObj(kind: nkString, strVal: "abc")
+```
+
+バージョン0.20 以降では、`system.reset`を使用してオブジェクトブランチの変更をサポートすることはできません。
+これは完全なメモリセーフではないためです。
+
+特別なルールとして、弁別子の種類は、`case`ステートメントを使用して制限することもできます。
+`case`ステートメントブランチの判別子変数の可能な値が、選択したオブジェクトブランチの判別子値のサブセットである場合、初期化は有効と見なされます。
+この解析は、順序型の不変の判別子に対してのみ機能し、`elif`分岐は無視します。
+`range`型の判別子値の場合、コンパイラは、判別子値の可能な値の範囲全体が選択されたオブジェクトブランチに対して有効かどうかをチェックします。
+
+例
+```nim
+let unknownKind = nkSub
+
+# 無効: kindフィールドが静的に既知でないため安全でない初期化:
+var y = Node(kind: unknownKind, strVal: "y")
+
+var z = Node()
+case unknownKind
+of nkAdd, nkSub:
+  # 有効: この分岐で可能な値は nkAdd/nkSub オブジェクトブランチのサブセットです:
+  z = Node(kind: unknownKind, leftOp: Node(), rightOp: Node())
+else:
+  echo "ignoring: ", unknownKind
+
+# これも有効, unknownKindBounded はnkAddまたはnkSubの値のみを含めることができるため
+let unknownKindBounded = range[nkAdd..nkSub](unknownKind)
+z = Node(kind: unknownKindBounded, leftOp: Node(), rightOp: Node())
+```
 
 
 
