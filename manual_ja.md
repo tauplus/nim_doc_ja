@@ -1749,13 +1749,104 @@ syscallの規則は、Cの`__syscall`と同じです。割り込みに使用さ�
 生成されたCコードには明示的な呼び出し規約はないため、Cコンパイラのデフォルトの呼び出し規約が使用されます。
 これが必要なのは、Nimのプロシージャに対するデフォルトの呼び出し規則が、速度を向上させるためのfastcallであるためです。
 
+### distinct型(Distinct type)
+distinct型は、その基本型と互換性のない基本タイプから派生した新しいタイプです。
+distinct型とその基本型の間にはサブタイプの関係がないというのが、distinct型の本質的な性質です。
 
+#### 通貨のモデル化(Modelling currencies)
+例えば、distinct型を使用して、数値ベースタイプを使用して異なる物理ユニットをモデル化できます。次の例では、通貨をモデル化します。
 
+通貨の計算に異なる通貨を混在させないでください。distinct型は、異なる通貨をモデル化するのに最適なツールです。
+```nim
+type
+  Dollar = distinct int
+  Euro = distinct int
 
+var
+  d: Dollar
+  e: Euro
 
+echo d + 12
+# エラー: 単位なしユニットと``Dollar``は加算できない
+```
+残念ながら、`d + 12.Dollar`も使用できません。
+これは、`+`が`int`（とりわけ）に対して定義されているがドルに対しては定義されていないためです。
+したがって、ドルに対して`+`を定義する必要があります。
+```nim
+proc `+` (x, y: Dollar): Dollar =
+  result = Dollar(int(x) + int(y))
+```
 
+ドルにドルを掛けることは意味がありませんが、単位のない数字を掛けることは意味があります。除算でも同じことが言えます。
+```nim
+proc `*` (x: Dollar, y: int): Dollar =
+  result = Dollar(int(x) * y)
 
+proc `*` (x: int, y: Dollar): Dollar =
+  result = Dollar(x * int(y))
 
+proc `div` ...
+```
+
+これはすぐに嫌になります。
+実装は些末であり、コンパイラは後で最適化するためだけにこのコードをすべて生成すべきではありません-ドルのすべて`+`はintの`+`と同じバイナリコードを生成する必要があります。
+borrowプラグマは、この問題を解決するように設計されています。 原則として、上記の簡単な実装を生成します。
+```nim
+proc `*` (x: Dollar, y: int): Dollar {.borrow.}
+proc `*` (x: int, y: Dollar): Dollar {.borrow.}
+proc `div` (x: Dollar, y: int): Dollar {.borrow.}
+```
+borrowプラグマにより、コンパイラは、distinct型の基本型を処理するprocと同じ実装を使用するため、コードは生成されません。
+
+しかし、このすべての定型コードそユーロ通貨に対して繰り返す必要があるようです。これは[テンプレート](#テンプレートTemplates)で解決できます。
+```nim
+template additive(typ: typedesc) =
+  proc `+` *(x, y: typ): typ {.borrow.}
+  proc `-` *(x, y: typ): typ {.borrow.}
+  
+  # 単項演算子:
+  proc `+` *(x: typ): typ {.borrow.}
+  proc `-` *(x: typ): typ {.borrow.}
+
+template multiplicative(typ, base: typedesc) =
+  proc `*` *(x: typ, y: base): typ {.borrow.}
+  proc `*` *(x: base, y: typ): typ {.borrow.}
+  proc `div` *(x: typ, y: base): typ {.borrow.}
+  proc `mod` *(x: typ, y: base): typ {.borrow.}
+
+template comparable(typ: typedesc) =
+  proc `<` * (x, y: typ): bool {.borrow.}
+  proc `<=` * (x, y: typ): bool {.borrow.}
+  proc `==` * (x, y: typ): bool {.borrow.}
+
+template defineCurrency(typ, base: untyped) =
+  type
+    typ* = distinct base
+  additive(typ)
+  multiplicative(typ, base)
+  comparable(typ)
+
+defineCurrency(Dollar, int)
+defineCurrency(Euro, int)
+```
+
+borrowプラグマを使用して、distinct型に注釈を付けて、特定の組み込み演算を引き継ぐこともできます。
+```nim
+type
+  Foo = object
+    a, b: int
+    s: string
+  
+  Bar {.borrow: `.`.} = distinct Foo
+
+var bb: ref Bar
+new bb
+# field access now valid
+bb.a = 90
+bb.s = "abc"
+```
+
+現在、この方法で借用できるのはドットアクセサーのみです。
 
 
 
@@ -1774,7 +1865,7 @@ syscallの規則は、Cの`__syscall`と同じです。割り込みに使用さ�
 
 
 
-
+## テンプレート(Templates)
 
 ## プラグマ(Pragmas)
 
