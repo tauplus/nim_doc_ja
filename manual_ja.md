@@ -1848,7 +1848,75 @@ bb.s = "abc"
 
 現在、この方法で借用できるのはドットアクセサーのみです。
 
+#### SQLインジェクション攻撃の回避(Avoiding SQL injection attacks)
+NimからSQLデータベースに渡されるSQLステートメントは、文字列としてモデル化される場合があります。
+ただし、文字列テンプレートを使用して値を入力すると、有名なSQLインジェクション攻撃に対して脆弱になります。
+```nim
+import strutils
 
+proc query(db: DbHandle, statement: string) = ...
+
+var
+  username: string
+
+db.query("SELECT FROM users WHERE name = '$1'" % username)
+# 恐ろしいセキュリティホールですが、コンパイラは気にしません!
+```
+
+これは、SQLを含む文字列とそうでない文字列を区別することで回避できます。
+distinct型は、`string`と互換性のない新しいストリングタイプ`SQL`を導入する手段を提供します。
+```nim
+type
+  SQL = distinct string
+
+proc query(db: DbHandle, statement: SQL) = ...
+
+var
+  username: string
+
+db.query("SELECT FROM users WHERE name = '$1'" % username)
+# 静的エラー：`query`にはSQL文字列が必要です！
+```
+
+抽象型とその基本型との間のサブタイプの関係を暗示しないことは、抽象型の本質的な特性です。
+文字列からSQLへの明示的な型変換が許可されます。
+```nim
+import strutils, sequtils
+
+proc properQuote(s: string): SQL =
+  # quotes a string properly for an SQL statement
+  return SQL(s)
+
+proc `%` (frmt: SQL, values: openarray[string]): SQL =
+  # quote each argument:
+  let v = values.mapIt(SQL, properQuote(it))
+  # we need a temporary type for the type conversion :-(
+  type StrSeq = seq[string]
+  # call strutils.`%`:
+  result = SQL(string(frmt) % StrSeq(v))
+
+db.query("SELECT FROM users WHERE name = '$1'".SQL % [username])
+```
+これで、SQLインジェクション攻撃に対するコンパイル時のチェックができました。
+`"".SQL`は`SQL("")`に変換されるため、見栄えの良いSQL文字列リテラルに新しい構文は必要ありません。
+仮想SQL型は、[db_sqlite](https://nim-lang.org/docs/db_sqlite.html)などのモジュールの[TSqlQuery](https://nim-lang.org/docs/db_sqlite.html#TSqlQuery)型として実際にライブラリに存在します。
+
+### オート型(Auto type)
+`auto`型は戻り値の型やパラメータのために使用することができます。
+戻り型の場合、コンパイラはルーチン本体から型を推測します。
+```nim
+proc returnsInt(): auto = 1984
+```
+現在、パラメータについては、暗黙的にジェネリックルーチンが作成されます。
+```nim
+proc foo(a, b: auto) = discard
+```
+これは次と同じです。
+```nim
+proc foo[T1, T2](a: T1, b: T2) = discard
+```
+ただし、後のバージョンの言語では、これを「ボディからパラメーターの型を推測する」ように変更する場合があります。
+また、空の`discard`ステートメントからパラメーターの型を推測できないため、上記の`foo`は拒否されます。
 
 
 
