@@ -1657,8 +1657,26 @@ dealloc(d)
 したがって、`d.s`は文字列割り当てが処理できるバイナリゼロに初期化されます。
 ガベージコレクションされたデータをアンマネージメモリと混合する場合、このような低レベルの詳細を知る必要があります。
 
+### Not nil annotation
+nilが有効な値であるすべての型に`not nil`注釈(annotation)を付けて、nilを有効な値から除外できます。
+(訳者注：下記コードをWandboxのNim1.0.2で試そうとした所、`{.experimental: "notnil".}`プラグマを要求されたため、要検証)
+```nim
+type
+  PObject = ref TObj not nil
+  TProc = (proc (x, y: int)) not nil
 
+proc p(x: PObject) =
+  echo "not nil"
 
+# compiler catches this:
+p(nil)
+
+# and also this:
+var x: PObject
+p(x)
+```
+コンパイラは、すべてのコードパスが、nilできないポインターを含む変数を初期化することを保証します。
+この解析の詳細は、まだここで指定する必要があります。
 
 
 
