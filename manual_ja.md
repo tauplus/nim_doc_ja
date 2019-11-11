@@ -1461,7 +1461,7 @@ z = Node(kind: unknownKindBounded, leftOp: Node(), rightOp: Node())
 ```
 
 ### セット型(Set type)
-セット型は、セットの数学的な概念をモデル化します。
+セット型は、集合の数学的な概念をモデル化します。
 セットのベース型は、特定のサイズの順序型のみになります。
 
 - `int8`-`int16`
@@ -1917,6 +1917,51 @@ proc foo[T1, T2](a: T1, b: T2) = discard
 ```
 ただし、後のバージョンの言語では、これを「ボディからパラメーターの型を推測する」ように変更する場合があります。
 また、空の`discard`ステートメントからパラメーターの型を推測できないため、上記の`foo`は拒否されます。
+
+## 型の関係性(Type relations)
+以下のセクションでは、コンパイラーが行う型チェックを記述するために必要な、型に関するいくつかの関係を定義します。
+
+### 型の等価性(Type Equality)
+Nimは、ほとんどの型に対して構造的な型の等価性を使用します。
+オブジェクト、列挙、およびdistinct型に対してのみ、名前の等価性が使用されます。
+次の擬似コードのアルゴリズムは、型の等価性を決定します。
+```nim
+proc typeEqualsAux(a, b: PType,
+                   s: var HashSet[(PType, PType)]): bool =
+  if (a,b) in s: return true
+  incl(s, (a,b))
+  if a.kind == b.kind:
+    case a.kind
+    of int, intXX, float, floatXX, char, string, cstring, pointer,
+        bool, nil, void:
+      # leaf type: kinds identical; nothing more to check
+      result = true
+    of ref, ptr, var, set, seq, openarray:
+      result = typeEqualsAux(a.baseType, b.baseType, s)
+    of range:
+      result = typeEqualsAux(a.baseType, b.baseType, s) and
+        (a.rangeA == b.rangeA) and (a.rangeB == b.rangeB)
+    of array:
+      result = typeEqualsAux(a.baseType, b.baseType, s) and
+               typeEqualsAux(a.indexType, b.indexType, s)
+    of tuple:
+      if a.tupleLen == b.tupleLen:
+        for i in 0..a.tupleLen-1:
+          if not typeEqualsAux(a[i], b[i], s): return false
+        result = true
+    of object, enum, distinct:
+      result = a == b
+    of proc:
+      result = typeEqualsAux(a.parameterTuple, b.parameterTuple, s) and
+               typeEqualsAux(a.resultType, b.resultType, s) and
+               a.callingConvention == b.callingConvention
+
+proc typeEquals(a, b: PType): bool =
+  var s: HashSet[(PType, PType)] = {}
+  result = typeEqualsAux(a, b, s)
+```
+型はサイクルを持つことができるグラフであるため、上記のアルゴリズムではこのケースを検出するために補助セット`s`が必要です。
+
 
 
 
