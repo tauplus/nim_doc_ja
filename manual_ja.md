@@ -1962,9 +1962,58 @@ proc typeEquals(a, b: PType): bool =
 ```
 型はサイクルを持つことができるグラフであるため、上記のアルゴリズムではこのケースを検出するために補助セット`s`が必要です。
 
+### distictを除外した型の等価性
+次のアルゴリズム（擬似コード）は、2つの型が`distinct`型に関係なく等しいかどうかを判断します。
+簡潔にするために、補助セット`s`を使用したサイクルチェックは省略されています。
+```nim
+proc typeEqualsOrDistinct(a, b: PType): bool =
+  if a.kind == b.kind:
+    case a.kind
+    of int, intXX, float, floatXX, char, string, cstring, pointer,
+        bool, nil, void:
+      # leaf type: kinds identical; nothing more to check
+      result = true
+    of ref, ptr, var, set, seq, openarray:
+      result = typeEqualsOrDistinct(a.baseType, b.baseType)
+    of range:
+      result = typeEqualsOrDistinct(a.baseType, b.baseType) and
+        (a.rangeA == b.rangeA) and (a.rangeB == b.rangeB)
+    of array:
+      result = typeEqualsOrDistinct(a.baseType, b.baseType) and
+               typeEqualsOrDistinct(a.indexType, b.indexType)
+    of tuple:
+      if a.tupleLen == b.tupleLen:
+        for i in 0..a.tupleLen-1:
+          if not typeEqualsOrDistinct(a[i], b[i]): return false
+        result = true
+    of distinct:
+      result = typeEqualsOrDistinct(a.baseType, b.baseType)
+    of object, enum:
+      result = a == b
+    of proc:
+      result = typeEqualsOrDistinct(a.parameterTuple, b.parameterTuple) and
+               typeEqualsOrDistinct(a.resultType, b.resultType) and
+               a.callingConvention == b.callingConvention
+  elif a.kind == distinct:
+    result = typeEqualsOrDistinct(a.baseType, b)
+  elif b.kind == distinct:
+    result = typeEqualsOrDistinct(a, b.baseType)
+```
 
-
-
+### サブタイプの関係性
+オブジェクト`a`が`b`を継承する場合、`a`は`b`のサブタイプです。
+このサブタイプの関係は、`var`,`ref`,`ptr`型に拡張されます。
+```nim
+proc isSubtype(a, b: PType): bool =
+  if a.kind == b.kind:
+    case a.kind
+    of object:
+      var aa = a.baseType
+      while aa != nil and aa != b: aa = aa.baseType
+      result = aa == b
+    of var, ref, ptr:
+      result = isSubtype(a.baseType, b.baseType)
+```
 
 ### 変換可能な関係(Convertible relation)
 
