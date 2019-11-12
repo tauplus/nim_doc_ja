@@ -2016,11 +2016,76 @@ proc isSubtype(a, b: PType): bool =
 ```
 
 ### 変換可能な関係(Convertible relation)
+次のアルゴリズムがtrueを返す場合、型`a`は暗黙的に型`b`に変換可能です。
+```nim
+proc isImplicitlyConvertible(a, b: PType): bool =
+  if isSubtype(a, b) or isCovariant(a, b):
+    return true
+  if isIntLiteral(a):
+    return b in {int8, int16, int32, int64, int, uint, uint8, uint16,
+                 uint32, uint64, float32, float64}
+  case a.kind
+  of int:     result = b in {int32, int64}
+  of int8:    result = b in {int16, int32, int64, int}
+  of int16:   result = b in {int32, int64, int}
+  of int32:   result = b in {int64, int}
+  of uint:    result = b in {uint32, uint64}
+  of uint8:   result = b in {uint16, uint32, uint64}
+  of uint16:  result = b in {uint32, uint64}
+  of uint32:  result = b in {uint64}
+  of float32: result = b in {float64}
+  of float64: result = b in {float32}
+  of seq:
+    result = b == openArray and typeEquals(a.baseType, b.baseType)
+  of array:
+    result = b == openArray and typeEquals(a.baseType, b.baseType)
+    if a.baseType == char and a.indexType.rangeA == 0:
+      result = b == cstring
+  of cstring, ptr:
+    result = b == pointer
+  of string:
+    result = b == cstring
+```
 
+暗黙的な変換は、Nimの`range`型コンストラクターに対しても実行されます。
 
+`a0`,`b0`の型を`T`とし、`A = range[a0..b0]`を引数、`F`を仮引数の型とします。
+`a0 >= low(F) and b0 <= high(F)`かつ`T`と`F`が共に符号あり整数か共に符号なし整数のとき、
+`A`から`T`への暗黙の型変換が存在します。
 
+次のアルゴリズムがtrueを返す場合、型`a`は型`b`に**明示的**に変換可能です。
+```nim
+proc isIntegralType(t: PType): bool =
+  result = isOrdinal(t) or t.kind in {float, float32, float64}
 
+proc isExplicitlyConvertible(a, b: PType): bool =
+  result = false
+  if isImplicitlyConvertible(a, b): return true
+  if typeEqualsOrDistinct(a, b): return true
+  if isIntegralType(a) and isIntegralType(b): return true
+  if isSubtype(a, b) or isSubtype(b, a): return true
+```
 
+変換可能な関係は、ユーザー定義の型コンバーターによって緩和できます。
+```nim
+converter toInt(x: char): int = result = ord(x)
+
+var
+  x: int
+  chr: char = 'a'
+
+# ここで暗黙の変換マジックが発生します
+x = chr
+echo x # => 97
+# 明示的な形式も使用できます
+x = chr.toInt
+echo x # => 97
+```
+
+`a`が左辺値で`typeEqualsOrDistinct(T,type(a))`が成り立つ場合、型変換`T(a)`は左辺値です。
+
+### 割り当ての互換性(Assignment compatibility)
+`a`が左辺値で`isImplicitlyConvertible(b.typ, a.typ)`が成り立つとき、式`b`は式`a`に割り当てることができます。
 
 
 
