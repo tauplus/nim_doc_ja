@@ -2212,7 +2212,7 @@ rem unresolvedExpression(undeclaredIdentifier)
 ### Varargs matching
 [可変長引数(Varargs)](#可変長引数Varargs)参照
 
-### ステートメントと式(Statements and expressions)
+## ステートメントと式(Statements and expressions)
 Nimは一般的なステートメント/式のパラダイムを使用します。
 ステートメントは式とは対照的に値を生成しません。
 ただし、一部の式はステートメントです。
