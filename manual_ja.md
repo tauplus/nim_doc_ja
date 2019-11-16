@@ -2167,6 +2167,54 @@ var ri: ref int
 gen(ri) # "ref T"
 ```
 
+### `var T`に基づくオーバーロード
+仮パラメータ`f`が通常の型チェックに加えて`var T`型の場合、引数は左辺値であることがチェックされます。`var T`は、`T`だけであるよりもよく一致します。
+```nim
+proc sayHi(x: int): string =
+  # matches a non-var int
+  result = $x
+proc sayHi(x: var int): string =
+  # matches a var int
+  result = $(x + 10)
+
+proc sayHello(x: int) =
+  var m = x # a mutable version of x
+  echo sayHi(x) # matches the non-var version of sayHi
+  echo sayHi(m) # matches the var version of sayHi
+
+sayHello(3) # 3
+            # 13
+```
+
+### untypedの遅延型解決
+注：未解決の式とは、シンボルの検索や型チェックが実行されていない式です。
+`immediate `として宣言されていないテンプレートとマクロはオーバーロードに関与するため、未解決の式をテンプレートまたはマクロに渡す方法が不可欠です。
+これは、`untyped`メタタイプが達成することです。
+```nim
+template rem(x: untyped) = discard
+
+rem unresolvedExpression(undeclaredIdentifier)
+```
+
+`untyped`型のパラメータは常に引数に一致します(引数に一致する限り)。
+
+ただし、他のオーバーロードが引数の解決をトリガーする可能性があるため、注意が必要です。
+```nim
+template rem(x: untyped) = discard
+proc rem[T](x: T) = discard
+
+# undeclared identifier: 'unresolvedExpression'
+rem unresolvedExpression(undeclaredIdentifier)
+```
+
+`untyped`と`varargs[untyped]`はこの意味で遅延な唯一なメタタイプであり、`typed`や`typedesc`などの他のメタタイプは遅延ではありません。
+
+
+
+
+
+
+
 
 
 ## テンプレート(Templates)
