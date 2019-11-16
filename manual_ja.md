@@ -2230,6 +2230,36 @@ Nimは一般的なステートメント/式のパラダイムを使用します�
 他のすべてのステートメントは`void`型でなければなりません(`discard`を使用して`void`型を生成できます)。
 `(;)`は新しいスコープを導入しません。
 
+# Discardステートメント(Discard statement)
+例：
+```nim
+proc p(x, y: int): int =
+  result = x + y
+
+discard p(3, 4) # `p`の戻り値を破棄
+```
+
+`discard`ステートメントは式の副作用について評価を行い、結果の値を破棄します。
+
+discardステートメントを使用せずにプロシージャの戻り値を無視すると、静的エラーになります。
+呼び出されたproc/iteratorがdiscardableプラグマで宣言されている場合、戻り値は暗黙的に無視できます。
+```nim
+proc p(x, y: int): int {.discardable.} =
+  result = x + y
+
+p(3, 4) # now valid
+```
+
+```nim
+proc valid*(): string =
+  let x = 317
+  "valid"
+```
+
+
+
+
+
 
 
 
