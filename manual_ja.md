@@ -2259,6 +2259,21 @@ proc classify(s: string) =
   else: discard
 ```
 
+### Void context
+ステートメントのリストでは、最後の式を除くすべての式が`void`型である必要があります。
+この規則に加えて、組み込み`result`シンボルへの割り当てを行った場合、後続の式が全て`void`コンテキストである必要があります。
+```nim
+proc invalid*(): string =
+  result = "foo"
+  "invalid"  # Error: value of type 'string' has to be discarded
+```
+
+```nim
+proc valid*(): string =
+  let x = 317
+  "valid"
+```
+
 
 
 
