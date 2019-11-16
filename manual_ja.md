@@ -2250,10 +2250,13 @@ proc p(x, y: int): int {.discardable.} =
 p(3, 4) # now valid
 ```
 
+空のdiscardステートメントは、多くの場合、nullステートメントとして使用されます。
 ```nim
-proc valid*(): string =
-  let x = 317
-  "valid"
+proc classify(s: string) =
+  case s[0]
+  of SymChars, '_': echo "an identifier"
+  of '0'..'9': echo "a number"
+  else: discard
 ```
 
 
