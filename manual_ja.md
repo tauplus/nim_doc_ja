@@ -2087,8 +2087,85 @@ echo x # => 97
 ### 割り当ての互換性(Assignment compatibility)
 `a`が左辺値で`isImplicitlyConvertible(b.typ, a.typ)`が成り立つとき、式`b`は式`a`に割り当てることができます。
 
+## オーバーロード解決
+`p(args)`の呼び出しにおいて、`p`は最も一致するルーチンが選ばれます。
+複数のルーチンが同等に一致するとき、セマンティック解析中にあいまいさが報告されます。
 
+argsの全ての引数は一致する必要があります。
+引数がどのように一致するかは、複数の異なるカテゴリがあります。
+`f`を仮パラメータの型とし、`a`を引数の型とします。
 
+- 完全一致：aとfが同じ型。
+- リテラル一致：`a`は値`v`の整数リテラルであり、`f`は符号付きまたは符号なし整数型であり、かつ`v`は`f`の範囲にある。または、`a`は浮動小数点リテラルであり、`f`は浮動小数点型であり、かつ`v`は`f`の範囲にある。
+- 総称一致：`f`が総称型で`a`が一致する。例えば、`a`が`int`型で`f`が総称（制約付き）パラメータ型である(`[T]`や`[T:int|char]`など)。
+- subrangeまたはサブタイプ一致：`a`が`range[T]`でかつ`T`が`f`と完全一致。または、`a`が`f`のサブタイプ。
+- Integral conversion一致：`a`は`f`に変換可能でかつ、`f`と`a`は整数型か浮動小数点型である。
+- 変換一致：`a`はユーザ定義の`converter`を介して`f`に変換可能である。
+
+これらの一致カテゴリには優先度があります。
+完全一致はリテラル一致よりも優先され、総称一致などよりも優先されます。
+次の`count(p,m)`では、ルーチン`p`の一致するカテゴリー`m`の一致数をカウントします。
+```nim
+for each matching category m in ["exact match", "literal match",
+                                "generic match", "subtype match",
+                                "integral match", "conversion match"]:
+  if count(p, m) > count(q, m): return true
+  elif count(p, m) == count(q, m):
+    discard "continue with next category m"
+  else:
+    return false
+return "ambiguous"
+```
+
+いくつかの例：
+```nim
+proc takesInt(x: int) = echo "int"
+proc takesInt[T](x: T) = echo "T"
+proc takesInt(x: int16) = echo "int16"
+
+takesInt(4) # "int"
+var x: int32
+takesInt(x) # "T"
+var y: int16
+takesInt(y) # "int16"
+var z: range[0..4] = 0
+takesInt(z) # "T"
+```
+
+このアルゴリズムが「曖昧な」結果を返す場合、さらなる曖昧性解消が実行されます。
+引数`a`がサブタイプ関係を介してパラメータータイプ`f`の`p`と`g`の両方に一致する場合、継承の深さが考慮されます。
+```nim
+type
+  A = object of RootObj
+  B = object of A
+  C = object of B
+
+proc p(obj: A) =
+  echo "A"
+
+proc p(obj: B) =
+  echo "B"
+
+var c = C()
+# あいまいでない。Bを呼び出す
+p(c)
+
+proc pp(obj: A, obj2: B) = echo "A B"
+proc pp(obj: B, obj2: A) = echo "B A"
+
+# これはあいまいである:
+pp(c, c)
+```
+
+同様に総称一致の場合、一致する中で最も特化した総称型が優先されます。
+```nim
+proc gen[T](x: ref ref T) = echo "ref ref T"
+proc gen[T](x: ref T) = echo "ref T"
+proc gen[T](x: T) = echo "T"
+
+var ri: ref int
+gen(ri) # "ref T"
+```
 
 
 
