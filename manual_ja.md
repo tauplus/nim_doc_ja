@@ -2230,7 +2230,7 @@ Nimは一般的なステートメント/式のパラダイムを使用します�
 他のすべてのステートメントは`void`型でなければなりません(`discard`を使用して`void`型を生成できます)。
 `(;)`は新しいスコープを導入しません。
 
-# Discardステートメント(Discard statement)
+### Discardステートメント(Discard statement)
 例：
 ```nim
 proc p(x, y: int): int =
