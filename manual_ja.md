@@ -2455,15 +2455,95 @@ proc classify(s: string) =
   else: echo "other"
 ```
 
+### When statement
+例：
+```nim
+when sizeof(int) == 2:
+  echo "running on a 16 bit system!"
+elif sizeof(int) == 4:
+  echo "running on a 32 bit system!"
+elif sizeof(int) == 8:
+  echo "running on a 64 bit system!"
+else:
+  echo "cannot happen!"
+```
+`when`ステートメントは、いくつかの例外を除いて`if`ステートメントとほとんど同じです。
+
+- 各条件（`expr`）は（`bool`型の）定数式でなければなりません。
+- ステートメントは、新しいスコープを開きません。
+- trueと評価された式に属するステートメントはコンパイラーによって変換され、他のステートメントはセマンティクスがチェックされません！ただし、各条件のセマンティクスがチェックされます。
+
+`when`ステートメントは、条件付きコンパイル手法を有効にします。
+特別な構文拡張として、`when`構文は`object`定義内でも使用できます。
+
+### When nimvm statement
+`nimvm`は特別なシンボルであり、コンパイル時と実行可能ファイルの実行パスを区別するための`when nimvm`ステートメントの式として使用できます。
+
+例：
+```nim
+proc someProcThatMayRunInCompileTime(): bool =
+  when nimvm:
+    # This branch is taken at compile time.
+    result = true
+  else:
+    # This branch is taken in the executable.
+    result = false
+const ctValue = someProcThatMayRunInCompileTime()
+let rtValue = someProcThatMayRunInCompileTime()
+assert(ctValue == true)
+assert(rtValue == false)
+```
+
+`when nimvm`ステートメントは次の要件を満たしている必要があります。
+
+- その式は常にnimvmでなければなりません。より複雑な式は許可されていません。
+- `elif`ブランチを含めることはできません。
+- `else`ブランチが含まれている必要があります。
+- ブランチ内のコードは、`when nimvm`ステートメントに続くコードのセマンティクスに影響を与えてはなりません。たとえば、後続のコードで使用されるシンボルを定義してはなりません。
+
+### Return statement
+例：
+```nim
+return 40+2
+```
+
+`return`ステートメントは、現在のプロシージャの実行を終了します。
+プロシージャでのみ許可されます。
+`expr`がある場合、これは次の構文糖衣です
+```nim
+result = expr
+return result
+```
+
+戻り値があるプロシージャーでの式のない`return`は`return result`の短縮表記です。
+return変数は常にプロシージャーの戻り値です。
+これはコンパイラによって自動的に宣言されます。
+`result`は(バイナリ)ゼロに初期化されます。
+```nim
+proc returnZero(): int =
+  # implicitly returns 0
+```
+
+### Yield statement
+例：
+```nim
+yield (1, 2, 3)
+```
+
+イテレータでは、`return`ステートメントの代わりに`yield`ステートメントが使用されます。
+イテレータでのみ有効です。イテレータを呼び出したforループの本体に実行が返されます。
+Yieldは反復プロセスを終了しませんが、次の反復が開始されると、実行はイテレータに戻されます。
+詳細については、イテレーターに関するセクション[Iterators and the for statement](#Iterators-and-the-for-statement)を参照してください。
 
 
 
 
 
 
+### Iterators and the for statement
 
 
-
+## プロシージャー(Procedures)
 
 ## テンプレート(Templates)
 
