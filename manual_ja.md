@@ -2274,13 +2274,186 @@ proc valid*(): string =
   "valid"
 ```
 
+### Var statement
+Varステートメントは、新しいローカル変数とグローバル変数を宣言し、それらを初期化します。
+変数のコンマ区切りリストを使用して、同じ型の変数を指定できます。
+```nim
+var
+  a: int = 0
+  x, y, z: int
+```
 
+初期化子が指定されている場合、型は省略できます。
+変数は初期化式と同じ型になります。
+初期化式がない場合、変数は常にデフォルト値で初期化されます。
+デフォルト値は型によって異なり、バイナリでは常にゼロです。
 
+|型|デフォルト値|
+|:---|:---|
+|any integer type|0|
+|any float|0.0|
+|char|'\0'|
+|bool|false|
+|ref or pointer type|nil|
+|procedural type|nil|
+|sequence|`@[]`|
+|string|`""`|
+|tuple[x: A, y: B, ...]|(default(A), default(B), ...) (オブジェクトに類似)|
+|array[0..., T]|[default(T), ...]|
+|range[T]|default(T); これは有効値の範囲外である可能性があります|
+|T = enum|castT; これは無効な値である可能性があります|
 
+noinitプラグマを使用すると、最適化のために暗黙的な初期化を回避できます。
+```nim
+var
+  a {.noInit.}: array[0..1023, char]
+```
 
+procに`noinit`プラグマで注釈が付けられている場合、暗黙の`result`変数を参照します。
+```nim
+proc returnUndefinedValue: int {.noinit.} = discard
+```
 
+暗黙的な初期化は、requiresInit型プラグマによっても防ぐことができます。
+コンパイラは、オブジェクトとそのすべてのフィールドの明示的な初期化を必要とします。
+ただし、変数が初期化されたことを証明するために制御フロー分析を行い、構文プロパティに依存しません。
+```nim
+type
+  MyObject = object {.requiresInit.}
 
+proc p() =
+  # the following is valid:
+  var x: MyObject
+  if someCondition():
+    x = a()
+  else:
+    x = a()
+  # use x
+```
 
+### Let statement
+`let`文は、新しいローカルとグローバル宣言する単一代入変数を、それらに値をバインドします。
+構文は、キーワード`var`がキーワード`let`に置き換えられることを除いて、varステートメントの構文と同じです。
+変数は左辺値ではないため、`var`パラメータに渡すことも、アドレスを取得することもできません。
+新しい値を割り当てることはできません。
+
+let変数では、通常の変数と同じプラグマを使用できます。
+
+### Tuple unpacking
+`var`または`let`ステートメントでタプルのアンパックを実行できます。
+特別な識別子`_`を使用して、タプルの一部を無視できます。
+```nim
+proc returnsTuple(): (int, int, int) = (4, 2, 3)
+
+let (x, _, z) = returnsTuple()
+```
+
+### Const section
+constセクションは、値が定数式である定数を宣言します。
+```nim
+import strutils
+const
+  roundPi = 3.1415
+  constEval = contains("abc", 'b') # computed at compile time!
+```
+
+宣言すると、定数のシンボルを定数式として使用できます。
+
+詳細については、[定数と定数式](#定数と定数式)を参照してください。
+
+### Static statement/expression
+静的ステートメント/式は、コンパイル時の実行を明示的に必要とします。
+副作用のあるコードでさえ、静的ブロックはで許可されています。
+```nim
+static:
+  echo "echo at compile time"
+```
+
+コンパイル時に実行できるNimコードには制限があります。
+詳細については、[コンパイル時実行の制限](#コンパイル時実行の制限)を参照してください。
+コンパイラがコンパイル時にブロックを実行できない場合、静的エラーです。
+
+### If statement
+例
+```nim
+var name = readLine(stdin)
+
+if name == "Andreas":
+  echo "What a nice name!"
+elif name == "":
+  echo "Don't you have a name?"
+else:
+  echo "Boring name..."
+```
+
+`if`ステートメントは、制御フローでブランチを作成する簡単な方法です。
+キーワード`if`の後の式が評価され、trueの場合、`:`の後の対応するステートメントが実行されます。
+そうでない場合、`elif`の後の式が評価され（`elif`ブランチがある場合）、trueの場合、`:`の後の対応するステートメントが実行されます。
+これは最後の`elif`まで続きます。
+すべての条件が失敗すると、`else`パートが実行されます。
+`else`パートがない場合、実行は次のステートメントから続行されます。
+
+`if`ステートメントでは、新しいスコープは`if/elif/else`キーワードの直後から始まり、対応するthenブロックの後に終わります。
+次の例ではスコープは視覚化のために`{| |}`で囲まれています。
+```nim
+if {| (let m = input =~ re"(\w+)=\w+"; m.isMatch):
+  echo "key ", m[0], " value ", m[1]  |}
+elif {| (let m = input =~ re""; m.isMatch):
+  echo "new m in this scope"  |}
+else: {|
+  echo "m not declared here"  |}
+```
+
+### Case statement
+例：
+```nim
+case readline(stdin)
+of "delete-everything", "restart-computer":
+  echo "permission denied"
+of "go-for-a-walk":     echo "please yourself"
+else:                   echo "unknown command"
+
+# ブランチのインデントも許可されます
+# 'readline(stdin)'の後のコロン':'はオプショナルです
+case readline(stdin):
+  of "delete-everything", "restart-computer":
+    echo "permission denied"
+  of "go-for-a-walk":     echo "please yourself"
+  else:                   echo "unknown command"
+```
+
+`case`の文は、`if`文に似ていますが、多分岐の選択を表します。
+キーワード`case`の後の式が評価され、その値がslicelistにある場合、対応するステートメント（`of`キーワードの後）が実行されます。
+値がslicelistにない場合、`else`パートが実行されます。
+もし`else`パートがなく、`expr`が保持できるすべての可能な値がslicelistにあるわけではない場合、静的エラーが発生します。
+これは、順序型の式にのみ当てはまります。
+`expr`の「すべての可能な値」は、`expr`の型によって決まります。
+静的エラーを抑制するには、空の`discard`ステートメントを持つ`else`パートを使用する必要があります。
+
+非順序型の場合、可能な値をすべてリストすることはできないため、これらには常に`else`パートが必要です。
+
+セマンティック解析中に`case`ステートメントの網羅性がチェックされるため、すべての`of`ブランチの値は定数式である必要があります。
+また、この制限により、コンパイラはよりパフォーマンスの高いコードを生成できます。
+
+特別なセマンティック拡張として、`case`ステートメントの`of`ブランチの式は、セットまたは配列コンストラクターで評価することもできます。
+セットまたは配列は、その要素のリストに展開されます。
+```nim
+const
+  SymChars: set[char] = {'a'..'z', 'A'..'Z', '\x80'..'\xFF'}
+
+proc classify(s: string) =
+  case s[0]
+  of SymChars, '_': echo "an identifier"
+  of '0'..'9': echo "a number"
+  else: echo "other"
+
+# is equivalent to:
+proc classify(s: string) =
+  case s[0]
+  of 'a'..'z', 'A'..'Z', '\x80'..'\xFF', '_': echo "an identifier"
+  of '0'..'9': echo "a number"
+  else: echo "other"
+```
 
 
 
