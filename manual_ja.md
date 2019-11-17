@@ -2535,6 +2535,175 @@ yield (1, 2, 3)
 Yieldは反復プロセスを終了しませんが、次の反復が開始されると、実行はイテレータに戻されます。
 詳細については、イテレーターに関するセクション[Iterators and the for statement](#Iterators-and-the-for-statement)を参照してください。
 
+### Block statement
+例：
+```nim
+var found = false
+block myblock:
+  for i in 0..3:
+    for j in 0..3:
+      if a[j][i] == 7:
+        found = true
+        break myblock # leave the block, in this case both for-loops
+echo found
+```
+
+`block`ステートメントは、ステートメントを（名前付き）ブロックにグループ化する手段です。
+ブロック内では、`break`ステートメントを使用してすぐにブロックを離脱することができます。
+ブレーク文は離脱するブロックを指定するために、ブロックの名前を含めることができます。
+
+### Break statement
+例：
+```nim
+break
+```
+
+`break`文は即座にブロックを離脱するために使います。
+`symbol`が指定されている場合、それは離脱するブロックの名前です。
+指定しない場合、最も内側のブロックを離脱します。
+
+### While statement
+例：
+```nim
+echo "Please tell me your password:"
+var pw = readLine(stdin)
+while pw != "12345":
+  echo "Wrong password! Next try:"
+  pw = readLine(stdin)
+```
+
+`while`ステートメントは、`expr`が`false`と評価されるまで実行されます。
+無限ループはエラーではありません。
+`while`ステートメントは暗黙的なブロックを開くため、`break`ステートメントで離脱することができます。
+
+### Continue statement
+`continue`ステートメントは、ループ構造の次の反復に移ります。
+ループ内でのみ許可されます。
+`continue`ステートメントは、ネストされたブロックの糖衣構文です。
+```nim
+while expr1:
+  stmt1
+  continue
+  stmt2
+```
+は以下と同等です。
+```nim
+while expr1:
+  block myBlockName:
+    stmt1
+    break myBlockName
+    stmt2
+```
+
+### Assembler statement
+Nimコードへのアセンブラコードの直接埋め込みは、アンセーフな`asm`ステートメントによってサポートされています。
+Nim識別子を参照するアセンブラコード内の識別子は、ステートメントのプラグマで指定できる特殊文字で囲む必要があります。
+デフォルトの特殊文字は'`'です。
+```nim
+{.push stackTrace:off.}
+proc addInt(a, b: int): int =
+  # a in eax, and b in edx
+  asm """
+      mov eax, `a`
+      add eax, `b`
+      jno theEnd
+      call `raiseOverflow`
+    theEnd:
+  """
+{.pop.}
+```
+
+GNUアセンブラーを使用する場合、引用符と改行が自動的に挿入されます。
+```nim
+proc addInt(a, b: int): int =
+  asm """
+    addl %%ecx, %%eax
+    jno 1
+    call `raiseOverflow`
+    1:
+    :"=a"(`result`)
+    :"a"(`a`), "c"(`b`)
+  """
+```
+は次の代わりになります。
+```nim
+proc addInt(a, b: int): int =
+  asm """
+    "addl %%ecx, %%eax\n"
+    "jno 1\n"
+    "call `raiseOverflow`\n"
+    "1: \n"
+    :"=a"(`result`)
+    :"a"(`a`), "c"(`b`)
+  """
+```
+
+### Using statement
+usingステートメントは、同じパラメーター名と型が繰り返し使用されるモジュールで構文上の利便性を提供します。
+```nim
+proc foo(c: Context; n: Node) = ...
+proc bar(c: Context; n: Node, counter: int) = ...
+proc baz(c: Context; n: Node) = ...
+```
+
+名前`c`のパラメーターはデフォルトで`Context`型になり、`n`はデフォルトで`Node`などになるという規則についてコンパイラーに伝えることができます。
+```nim
+using
+  c: Context
+  n: Node
+  counter: int
+
+proc foo(c, n) = ...
+proc bar(c, n, counter) = ...
+proc baz(c, n) = ...
+
+proc mixedMode(c, n; x, y: int) =
+  # 'c' is inferred to be of the type 'Context'
+  # 'n' is inferred to be of the type 'Node'
+  # But 'x' and 'y' are of type 'int'.
+```
+
+`using`セクションは、`var`または`let`セクションと同じインデントベースのグループ化構文を使用します。
+
+型指定されていないテンプレートパラメータはデフォルトで`system.untyped`型であるため、`template`には`using`は適用されないことに注意してください。
+
+`using`宣言を使用する必要があるパラメーターと、明示的に入力されるパラメーターを混在させることは可能です。
+それらの間にセミコロンが必要です。
+
+### If expression
+`if expression `はif文とほとんど同じですが、式です。
+```nim
+var y = if x > 8: 9 else: 10
+```
+
+if式の結果は常に値になるため、`else`のパートが必要です。`Elif`パートも使用できます。
+
+### When expression
+`if expression `と同じですが、whenステートメントに対応します。
+
+### Case expression
+`case expression`もまた、caseステートメントにとてもよく似ています。
+```nim
+var favoriteFood = case animal
+  of "dog": "bones"
+  of "cat": "mice"
+  elif animal.endsWith"whale": "plankton"
+  else:
+    echo "I'm not sure what to serve, but everybody loves ice cream"
+    "ice cream"
+```
+
+上記の例に見られるように、case式は副作用を引き起こす可能性もあります。
+ブランチに複数のステートメントが指定されている場合、Nimは最後の式を結果値として使用します。
+
+### Block expression
+`block expression`は、ブロックステートメントに似ていますが、ブロックの下の最後の式を値として使用する式です。
+ステートメントリスト式に似ていますが、ステートメントリスト式は新しいブロックスコープを開きません。
+
+
+
+
+
 
 
 
