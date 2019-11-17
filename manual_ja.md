@@ -2707,18 +2707,88 @@ let a = block:
   fib
 ```
 
+### Table constructor
+テーブルコンストラクターは、配列コンストラクターの糖衣構文です。
+```nim
+{"key1": "value1", "key2", "key3": "value2"}
 
+# is the same as:
+[("key1", "value1"), ("key2", "value2"), ("key3", "value2")]
+```
 
+空のテーブルは`{:}`と書くことができ（空のセット`{}`とは対照的です）、これは空の配列コンストラクター`[]`として書く別の方法です。
+テーブルをサポートするこの少し変わった方法には、多くの利点があります。
 
+- (key,value)ペアの順序は保持されるため、たとえば`{key:val}.newOrderedTable`を使用すると、順序付けされた辞書を簡単にサポートできます。
+- テーブルリテラルは`const`セクションに配置でき、コンパイラーは配列の場合と同じように実行可能ファイルのデータセクションに簡単に配置できます。また、生成されたデータセクションには最小限のメモリが必要です。
+- すべてのテーブル実装は、構文的に同等に扱われます。
+- 最小限の糖衣構文は別として、言語コアはテーブルについて知る必要はありません。
 
+### 型変換(Type conversions)
+構文的には、型変換はプロシージャコールに似ていますが、プロシージャ名はタイプ名に置き換えられます。
+型の変換は、型を別の型に変換できないと例外が発生するという意味で常に安全です（静的に決定できない場合）。
 
+Nimの型変換よりも通常のprocが好まれることがよくあります。
+たとえば、慣例により$は`toString`演算子であり、`toFloat`と`toInt`を使用して浮動小数点から整数へ、またはその逆に変換できます。
 
+型変換は、オーバーロードされたルーチンを明確にするためにも使用できます。
+```nim
+proc p(x: int) = echo "int"
+proc p(x: string) = echo "string"
 
+let procVar = (proc(x: string))(p)
+procVar("a")
+```
 
-### Iterators and the for statement
+### 型キャスト(Type casts)
+例：
+```nim
+cast[int](x)
+```
 
+型キャストは、式のビットパターンを別の型であるかのように解釈する粗雑なメカニズムです。
+型キャストは低レベルのプログラミングにのみ必要であり、本質的にアンセーフです。
+
+### アドレス演算子(The addr operator)
+`addr`演算子は、左辺値のアドレスを返します。
+ロケーションのタイプが`T`の場合、`addr`演算子の結果は`ptr T`型です。
+アドレスは常にトレースされない参照です。
+スタックにあるオブジェクトのアドレスを取得することは**安全ではありません**。
+なぜなら、ポインターはスタック上のオブジェクトよりも長く存続し、存在しないオブジェクトを参照できるからです。
+変数のアドレスを取得できますが、`let`ステートメントで宣言された変数では使用できません。
+
+```nim
+let t1 = "Hello"
+var
+  t2 = t1
+  t3 : pointer = addr(t2)
+echo repr(addr(t2))
+# --> ref 0x7fff6b71b670 --> 0x10bb81050"Hello"
+echo cast[ptr string](t3)[]
+# --> Hello
+# The following line doesn't compile:
+echo repr(addr(t1))
+# Error: expression has no address
+```
+
+### アンセーフアドレス演算子(The unsafeAddr operator)
+`C`などの他のコンパイル言語との相互運用を容易にするため、`let`変数、パラメーター、または`for`ループ変数のアドレスを取得するには、`unsafeAddr`演算を使用できます。
+```nim
+let myArray = [1, 2, 3]
+foreignProcThatTakesAnAddr(unsafeAddr myArray)
+```
 
 ## プロシージャー(Procedures)
+
+
+
+
+
+
+
+
+
+## Iterators and the for statement
 
 ## テンプレート(Templates)
 
