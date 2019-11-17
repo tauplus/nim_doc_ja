@@ -2779,11 +2779,104 @@ foreignProcThatTakesAnAddr(unsafeAddr myArray)
 ```
 
 ## プロシージャー(Procedures)
+ほとんどのプログラミング言語でメソッドまたは関数を呼ばれるものは、Nimではプロシージャと呼ばれます。
+プロシージャ宣言は、識別子、0個以上の仮パラメータ、戻り値の型、およびコードのブロックで構成されます。
+仮パラメータは、カンマまたはセミコロンで区切られた識別子のリストとして宣言されます。
+パラメーターには、`typename`によって型が与えられます。
+型は、パラメーターリストの先頭、セミコロン区切り文字、または既に入力されたパラメーターのいずれかに到達するまで、その直前のすべてのパラメーターに適用されます。
+セミコロンを使用して、タイプの分離と後続の識別子をより明確にすることができます。
+```nim
+# Using only commas
+proc foo(a, b: int, c, d: bool): int
 
+# Using semicolon for visual distinction
+proc foo(a, b: int; c, d: bool): int
 
+# Will fail: a is untyped since ';' stops type propagation.
+proc foo(a; b: int; c, d: bool): int
+```
 
+パラメータは、呼び出し側が引数に値を提供しない場合に使用されるデフォルト値で宣言できます。
+```nim
+# b is optional with 47 as its default value
+proc foo(a: int, b: int = 47): int
+```
 
+型修飾子`var`を使用してパラメーターをミュータブルとして宣言し、procがこれらの引数を変更できるようになります。
+```nim
+# "returning" a value to the caller through the 2nd argument
+# Notice that the function uses no actual return value at all (ie void)
+proc foo(inp: int, outp: var int) =
+  outp = inp + 47
+```
 
+proc宣言に本体がない場合は、前方宣言です。
+プロシージャが値を返す場合、プロシージャ本体は、戻り値を表す`result`という名前の暗黙的に宣言された変数にアクセスできます。
+Procsはオーバーロードされる可能性があります。オーバーロード解決アルゴリズムは、引数に最適なprocを決定します。
+```nim
+proc toLower(c: char): char = # toLower for characters
+  if c in {'A'..'Z'}:
+    result = chr(ord(c) + (ord('a') - ord('A')))
+  else:
+    result = c
+
+proc toLower(s: string): string = # toLower for strings
+  result = newString(len(s))
+  for i in 0..len(s) - 1:
+    result[i] = toLower(s[i]) # calls toLower for characters; no recursion!
+```
+
+プロシージャの呼び出しは、さまざまな方法で実行できます。
+```nim
+proc callme(x, y: int, s: string = "", c: char, b: bool = false) = ...
+
+# call with positional arguments      # parameter bindings:
+callme(0, 1, "abc", '\t', true)       # (x=0, y=1, s="abc", c='\t', b=true)
+# call with named and positional arguments:
+callme(y=1, x=0, "abd", '\t')         # (x=0, y=1, s="abd", c='\t', b=false)
+# call with named arguments (order is not relevant):
+callme(c='\t', y=1, x=0)              # (x=0, y=1, s="", c='\t', b=false)
+# call as a command statement: no () needed:
+callme 0, 1, "abc", '\t'              # (x=0, y=1, s="abc", c='\t', b=false)
+```
+
+プロシージャは、それ自体を再帰的に呼び出すことができます。
+
+演算子は、識別子として特別な演算子記号を使用したプロシージャです。
+```nim
+proc `$` (x: int): string =
+  # converts an integer to a string; this is a prefix operator.
+  result = intToStr(x)
+```
+
+1つのパラメーターを持つ演算子は前置演算子であり、2つのパラメーターを持つ演算子は中置演算子です。
+（ただし、パーサーはこれらを式内の演算子の位置と区別します。）
+後置演算子を宣言する方法はありません。
+すべての後置演算子は組み込みであり、文法によって明示的に処理されます。
+
+\`opr\`表記を使用して、通常のprocのように任意の演算子を呼び出すことができます。（したがって、演算子は3つ以上のパラメーターを持つことができます）
+```nim
+proc `*+` (a, b, c: int): int =
+  # Multiply and add
+  result = a * b + c
+
+assert `*+`(3, 4, 6) == `+`(`*`(a, b), c)
+```
+
+### Export marker
+宣言されたシンボルがアスタリスクでマークされている場合、現在のモジュールからエクスポートされます。
+```nim
+proc exportedEcho*(s: string) = echo s
+proc `*`*(a: string; b: int): string =
+  result = newStringOfCap(a.len * b)
+  for i in 1..b: result.add a
+
+var exportedVar*: int
+const exportedConst* = 78
+type
+  ExportedType* = object
+    exportedField*: int
+```
 
 
 
