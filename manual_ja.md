@@ -2699,7 +2699,13 @@ var favoriteFood = case animal
 ### Block expression
 `block expression`は、ブロックステートメントに似ていますが、ブロックの下の最後の式を値として使用する式です。
 ステートメントリスト式に似ていますが、ステートメントリスト式は新しいブロックスコープを開きません。
-
+```nim
+let a = block:
+  var fib = @[0, 1]
+  for i in 0..10:
+    fib.add fib[^1] + fib[^2]
+  fib
+```
 
 
 
