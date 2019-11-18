@@ -2948,17 +2948,186 @@ proc `f=`(x: MyObject; value: string) =
 これらの規則により、オブジェクトフィールドとアクセサに同じ名前を付けることができます。
 モジュール内では`x.f`は常にフィールドアクセスとして解釈され、モジュール外ではアクセサproc呼び出しとして解釈されます。
 
+### コマンド呼び出し構文(Command invocation syntax)
+呼び出しが構文的にステートメントである場合、ルーチンは`()`なしで呼び出すことができます。
+このコマンド呼び出し構文は式でも機能しますが、その後に続く引数は1つだけです。
+この制限は、`echo f 1, f 2`が`echo(f(1, f(2)))`としてではなく`echo(f(1), f(2))`として解析されることを意味します。
+この場合、メソッド呼び出し構文を使用してもう1つの引数を提供できます。
 
+```nim
+proc optarg(x: int, y: int = 0): int = x + y
+proc singlearg(x: int): int = 20*x
 
+echo optarg 1, " ", singlearg 2  # prints "1 40"
 
+let fail = optarg 1, optarg 8   # Wrong. Too many arguments for a command call
+let x = optarg(1, optarg 8)  # traditional procedure call with 2 arguments
+let y = 1.optarg optarg 8    # same thing as above, w/o the parenthesis
+assert x == y
+```
 
+また、コマンド呼び出し構文には、引数として複雑な式を含めることはできません。
+例：[匿名プロシージャー](#匿名プロシージャーAnonymous-Procs),`if`,`case`,`try`。
+引数なしの関数呼び出しでは、呼び出しと関数自体を最初のクラス値として区別するために()が必要です。
 
+### クロージャー(Closures)
+プロシージャは、モジュールの最上位レベルおよび他のスコープ内に表示できます。
+この場合、プロシージャはネストされたプロシージャと呼ばれます。
+ネストされたprocは、それを囲むスコープからローカル変数にアクセスできます。
+そうすると、クロージャーになります。
+キャプチャされた変数は、クロージャー（その環境）への非表示の追加引数に格納され、クロージャーとそのエンクロージングスコープの両方から参照によってアクセスされます（つまり、それらに加えられた変更は両方の場所で表示されます）。
+コンパイラがこれが安全であると判断した場合、クロージャー環境はヒープまたはスタックに割り当てられます。
 
+#### ループ内でのクロージャーの作成(Creating closures in loops)
+クロージャーは参照によってローカル変数をキャプチャするため、ループ本体内での動作が望ましくないことがよくあります。
+この動作を変更する方法の詳細については[closureScope](https://nim-lang.org/docs/system.html#closureScope)参照。
 
+### 匿名プロシージャー(Anonymous Procs)
+名前のないプロシージャは、他のプロシージャに渡すラムダ式として使用できます。
+```nim
+var cities = @["Frankfurt", "Tokyo", "New York", "Kyiv"]
 
+cities.sort(proc (x,y: string): int =
+    cmp(x.len, y.len))
+```
 
+式としてのProcsは、ネストされたprocとして最上位の実行可能コード内にも表示できます。
+[sugar](https://nim-lang.org/docs/sugar.html)モジュールには`=>`マクロが含まれており、JavaScript,C#などの言語のようにラムダに似た匿名プロシージャのより簡潔な構文を有効にします。
 
+### 関数(func)
+`func`キーワードは、副作用のないプロシージャの短縮表記です。
+```nim
+func binarySearch[T](a: openArray[T]; elem: T): int
+```
+は下記の短縮形です。
+```nim
+proc binarySearch[T](a: openArray[T]; elem: T): int {.noSideEffect.}
+```
 
+### オーバーロードできない組込み機能(Nonoverloadable builtins)
+次の組み込みプロシージャは、実装が単純であるため、オーバーロードできません（特別なセマンティックチェックが必要です）。
+```nim
+declared, defined, definedInScope, compiles, sizeOf,
+is, shallowCopy, getAst, astToStr, spawn, procCall
+```
+
+したがって、通常の識別子よりもキーワードのように機能します。
+ただし、キーワードとは異なり、再定義は`system`モジュールの定義をシャドウイングする場合があります。
+このリストから、`x`は`f`に渡される前に型チェックできないため、ドット表記`x.f`で次のように記述しないでください。
+```nim
+declared, defined, definedInScope, compiles, getAst, astToStr
+```
+
+### Varパラメーター(Var parameters)
+パラメーターのタイプには、`var`キーワードをプレフィックスとして付けることができます。
+```nim
+proc divmod(a, b: int; res, remainder: var int) =
+  res = a div b
+  remainder = a mod b
+
+var
+  x, y: int
+
+divmod(8, 5, x, y) # modifies x and y
+assert x == 1
+assert y == 3
+```
+
+この例では、`res`と`remainder`は`var`パラメーターです。
+`Var`パラメータはプロシージャによって変更でき、変更は呼び出し元に反映されます。
+varパラメーターに渡される引数は左辺値でなければなりません。
+Varパラメーターは、非表示ポインターとして実装されます。上記の例は次と同等です
+
+```nim
+proc divmod(a, b: int; res, remainder: ptr int) =
+  res[] = a div b
+  remainder[] = a mod b
+
+var
+  x, y: int
+divmod(8, 5, addr(x), addr(y))
+assert x == 1
+assert y == 3
+```
+
+この例では、varパラメーターまたはポインターを使用して2つの戻り値を提供しています。
+これは、タプルを返すことにより、よりクリーンな方法で実行できます。
+```nim
+proc divmod(a, b: int): tuple[res, remainder: int] =
+  (a div b, a mod b)
+
+var t = divmod(8, 5)
+
+assert t.res == 1
+assert t.remainder == 3
+```
+
+タプルのアンパックを使用して、タプルのフィールドにアクセスできます。
+```nim
+var (x, y) = divmod(8, 5) # tuple unpacking
+assert x == 1
+assert y == 3
+```
+注：`var`パラメーターは、効率的なパラメーターの受け渡しには必要ありません。
+var以外のパラメーターは変更できないことで、コンパイラーが実行を高速化できると見なす場合、常に参照によって引数を自由に渡すことができます。
+
+### Var return type
+proc,converter,iteratorは`var`型を返す場合があります。
+これは、戻り値が左辺値であり、呼び出し元が変更できることを意味します。
+```nim
+var g = 0
+
+proc writeAccessToG(): var int =
+  result = g
+
+writeAccessToG() = 6
+assert g == 6
+```
+
+暗黙的に導入されたポインターを使用して、その存続期間を超えてlocationにアクセスできる場合は、静的エラーです。
+```nim
+proc writeAccessToG(): var int =
+  var g = 0
+  result = g # Error!
+```
+
+イテレータの場合、タプルの戻り値型のコンポーネントには`var`型も含めることができます。
+```nim
+iterator mpairs(a: var seq[string]): tuple[key: int, val: var string] =
+  for i in 0..a.high:
+    yield (i, a[i])
+```
+
+標準ライブラリでは、`var`型を返すルーチンの名前はすべて、規則で接頭辞`m`で始まります。
+
+`var T`で返すためのメモリの安全性は、単純な借用ルールによって保証されます：
+`result`がヒープを指す場所を参照しない場合（つまり、`result = X`で`X`が`ptr`か`ref`アクセスを含まない）、ルーチンの最初のパラメーターによって逸脱する必要があります ：
+```nim
+proc forward[T](x: var T): var T =
+  result = x # ok, deviated from the first parameter.
+
+proc p(param: var int): var int =
+  var x: int
+  # we know 'forward' provides a view into the location deviated by
+  # its first argument 'x'.
+  result = forward(x) # Error: location is derived from ``x``
+                      # which is not p's first parameter and lives
+                      # on the stack.
+```
+
+つまり、`result`が指すライフタイムは最初のパラメーターのライフタイムに付加され、コールサイトでのメモリの安全性を検証するのに十分な知識です。
+
+### 今後の方向性(Future directions)
+Nimの今後のバージョンでは、次のような構文を使用して借用ルールをより正確にできます。
+```nim
+proc foo(other: Y; container: var X): var T from container
+```
+
+ここで、`var T from container`は、locationが2番目のパラメータ（この場合はcontainerと呼ばれる）から外れていることを明示的に公開します。
+構文`var T from p`は、`varTy[T, 1]`と互換性のない型`varTy[T, 2]`を指定します。
+
+### 添字演算子のオーバーロード(Overloading of the subscript operator)
+配列/openarrays/sequencesの添え字演算子`[]`はオーバーロードできます。
 
 
 
