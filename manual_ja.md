@@ -2878,6 +2878,92 @@ type
     exportedField*: int
 ```
 
+### メソッド呼び出し構文(Method call syntax)
+オブジェクト指向プログラミングのために、`method(obj,args)`の代わりに`obj.method(args)`を使用できます。
+引数が残っていない場合は括弧を省略できます：`len(obj)`の代わりに`obj.len`。
+
+このメソッド呼び出し構文はオブジェクトに限定されず、プロシージャの任意の型の最初の引数を提供するために使用できます。
+```nim
+echo "abc".len # is the same as echo len "abc"
+echo "abc".toUpper()
+echo {'a', 'b', 'c'}.card
+stdout.writeLine("Hallo") # the same as writeLine(stdout, "Hallo")
+```
+
+メソッド呼び出し構文を見るもう1つの方法は、欠落している後置記法を提供することです。
+
+メソッド呼び出しの構文は、明示的なジェネリックインスタンス化と競合します。
+`x.p[T]`は常に`(x.p)[T]`として解析されるため、`p[T](x)`を`x.p[T]`と記述できません。
+
+参照：[メソッド呼び出し構文の制限](#メソッド呼び出し構文の制限Limitations-of-the-method-call-syntax)
+
+`[: ]`表記はこの問題を軽減するために設計されています。
+`x.p[:T]`はパーサーによって`p[T](x)`と書き換えられ、`x.p[:T](y)`はパーサーによって`p[T](x, y)`と書き換えられます。
+`[: ]`にはAST表現がないため、書き換えは解析ステップで直接実行されることに注意してください。
+
+### プロパティ(Properties)
+Nimはget-propertiesを必要としません。
+メソッド呼び出し構文で呼び出される通常のget-proceduresは同じことを達成します。
+ただし、値の設定は異なります。このためには、特別なセッター構文​​が必要です。
+```nim
+# Module asocket
+type
+  Socket* = ref object of RootObj
+    host: int # cannot be accessed from the outside of the module
+
+proc `host=`*(s: var Socket, value: int) {.inline.} =
+  ## setter of hostAddr.
+  ## This accesses the 'host' field and is not a recursive call to
+  ## ``host=`` because the builtin dot access is preferred if it is
+  ## avaliable:
+  s.host = value
+
+proc host*(s: Socket): int {.inline.} =
+  ## getter of hostAddr
+  ## This accesses the 'host' field and is not a recursive call to
+  ## ``host`` because the builtin dot access is preferred if it is
+  ## avaliable:
+  s.host
+````
+
+```nim
+# module B
+import asocket
+var s: Socket
+new s
+s.host = 34  # same as `host=`(s, 34)
+```
+
+`f=`(後ろに`=`がつく)として定義されたprocはセッターと呼ばれます。
+セッターはバッククォート表記を介して明示的に呼び出すことができます。
+```nim
+proc `f=`(x: MyObject; value: string) =
+  discard
+
+`f=`(myObject, "value")
+```
+
+`x`の型に`f`という名前のフィールドがない場合または`f`がカレントモジュールから不可視の場合に限り、
+パターン`x.f = value`で暗黙的に`f=`を呼び出すことができます。
+これらの規則により、オブジェクトフィールドとアクセサに同じ名前を付けることができます。
+モジュール内では`x.f`は常にフィールドアクセスとして解釈され、モジュール外ではアクセサproc呼び出しとして解釈されます。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### メソッド呼び出し構文の制限(Limitations of the method call syntax)
 
 
 
