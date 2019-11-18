@@ -3117,7 +3117,7 @@ proc p(param: var int): var int =
 
 つまり、`result`が指すライフタイムは最初のパラメーターのライフタイムに付加され、コールサイトでのメモリの安全性を検証するのに十分な知識です。
 
-### 今後の方向性(Future directions)
+#### 今後の方向性(Future directions)
 Nimの今後のバージョンでは、次のような構文を使用して借用ルールをより正確にできます。
 ```nim
 proc foo(other: Y; container: var X): var T from container
