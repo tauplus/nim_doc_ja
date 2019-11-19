@@ -3372,6 +3372,27 @@ if 4:
 暗黙的なコンバーターチェーンはサポートされていないことに注意してください。
 タイプAからタイプBへ、およびタイプBからタイプCへのコンバーターがある場合、AからCへの暗黙的な変換は提供されません。
 
+## 型セクション(Type sections)
+例：
+```nim
+type # example demonstrating mutually recursive types
+  Node = ref object  # an object managed by the garbage collector (ref)
+    le, ri: Node     # left and right subtrees
+    sym: ref Sym     # leaves contain a reference to a Sym
+  
+  Sym = object       # a symbol
+    name: string     # the symbol's name
+    line: int        # the line the symbol was declared in
+    code: Node       # the symbol's abstract syntax tree
+```
+
+型セクションは、`type`キーワードで始まります。 複数のタイプ定義が含まれています。
+型定義は、型を名前にバインドします。型定義は、再帰的または相互再帰的にできます。
+相互再帰型は、単一の型セクション内でのみ可能です。
+オブジェクトや列挙型などの名目上の型は、型セクションでのみ定義できます。
+
+
+
 
 
 ## テンプレート(Templates)
