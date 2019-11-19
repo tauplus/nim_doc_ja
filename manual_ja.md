@@ -3129,16 +3129,242 @@ proc foo(other: Y; container: var X): var T from container
 ### 添字演算子のオーバーロード(Overloading of the subscript operator)
 配列/openarrays/sequencesの添え字演算子`[]`はオーバーロードできます。
 
+## マルチメソッド(Multi-methods)
+注：Nim 0.20以降、マルチメソッドを使用するには、コンパイル時に`--multimethods:on`を明示的に渡す必要があります。
 
+プロシージャは常に静的ディスパッチを使用します。
+マルチメソッドは動的ディスパッチを使用します。
+動的ディスパッチがオブジェクトで機能するには、オブジェクトが参照型である必要があります。
+```nim
+type
+  Expression = ref object of RootObj ## abstract base class for an expression
+  Literal = ref object of Expression
+    x: int
+  PlusExpr = ref object of Expression
+    a, b: Expression
 
+method eval(e: Expression): int {.base.} =
+  # override this base method
+  raise newException(CatchableError, "Method without implementation override")
 
-### メソッド呼び出し構文の制限(Limitations of the method call syntax)
+method eval(e: Literal): int = return e.x
 
+method eval(e: PlusExpr): int =
+  # watch out: relies on dynamic binding
+  result = eval(e.a) + eval(e.b)
 
+proc newLit(x: int): Literal =
+  new(result)
+  result.x = x
+
+proc newPlus(a, b: Expression): PlusExpr =
+  new(result)
+  result.a = a
+  result.b = b
+
+echo eval(newPlus(newPlus(newLit(1), newLit(2)), newLit(4)))
+```
+
+この例では、コンストラクタ`newLit`および`newPlus`は静的バインディングを使用する必要があるためprocですが、`eval`は動的バインディングを必要とするためメソッドです。
+
+例に見られるように、baseメソッドにはbaseプラグマで注釈を付ける必要があります。
+baseプラグマは、maseメソッドmがmの呼び出しが引き起こす可能性のあるすべての効果を決定するための基盤として使用されることをプログラマーに思い出させる役割も果たします。
+
+注：メソッドのコンパイル時実行は（まだ）サポートされていません。
+
+注：Nim 0.20以降、ジェネリックメソッドは廃止されました。
+
+### procCallによる動的メソッド解決の禁止(Inhibit dynamic method resolution via procCall)
+組み込みのsystem.procCallを使用して、動的メソッドの解決を禁止できます。
+これは、従来のOOP言語が提供するsuperキーワードにいくらか匹敵します。
+```nim
+type
+  Thing = ref object of RootObj
+  Unit = ref object of Thing
+    x: int
+
+method m(a: Thing) {.base.} =
+  echo "base"
+
+method m(a: Unit) =
+  # Call the base method:
+  procCall m(Thing(a))
+  echo "1"
+```
 
 ## Iterators and the for statement
+for文はコンテナの要素を反復処理するための抽象的メカニズムです。
+これを行うには、イテレータに依存します。
+`while`ステートメントと同様に、`for`ステートメントは暗黙的な`block`を開くため、`break`ステートメントで離脱することができます。
+
+forループは反復変数を宣言します。それらのスコープはループ本体の終わりまで到達します。反復変数の型は、イテレータの戻り型によって推測されます。
+
+イテレータは、forループのコンテキストで呼び出すことができることを除いて、プロシージャに似ています。
+イテレータは、抽象型の反復を指定する方法を提供します。
+`for`ループの実行における重要な役割は、呼び出されたイテレーターで`yield`ステートメントを果たします。
+`yield`ステートメントに到達すると、データは`for`ループ変数にバインドされ、`for`ループの本体で制御が継続されます。
+イテレータのローカル変数と実行状態は、呼び出し間で自動的に保存されます。
+```nim
+# this definition exists in the system module
+iterator items*(a: string): char {.inline.} =
+  var i = 0
+  while i < len(a):
+    yield a[i]
+    inc(i)
+
+for ch in items("hello world"): # `ch` is an iteration variable
+  echo ch
+```
+
+コンパイラは次のようにプログラマが書いたかのようなコードを生成します。
+```nim
+var i = 0
+while i < len(a):
+  var ch = a[i]
+  echo ch
+  inc(i)
+```
+
+イテレータがタプルを生成する場合、タプル内のコンポーネントと同じ数の反復変数が存在する可能性があります。
+i番目の反復変数の型は、i番目のコンポーネントの型です。
+つまり、forループコンテキストでの暗黙的なタプルのアンパックがサポートされています。
+
+### 暗黙的なアイテム/ペアの呼び出し(Implict items/pairs invocations)
+forループ式`e`がイテレータを示さず、forループに変数が1つだけある場合、forループ式は`items(e)`に書き換えられます。すなわち、アイテムイテレータが暗黙的に呼び出されます。
+```nim
+for x in [1,2,3]: echo x
+```
+forループにちょうど2つの変数がある場合、`pairs`反復子が暗黙的に呼び出されます。
+
+識別子のアイテム/ペアのシンボル検索は、書き換えステップの後に実行されるため、アイテム/ペアのすべてのオーバーロードが考慮されます。
+
+### First class iterators
+Nimには2種類のイテレータがあります：インラインイテレータとクロージャイテレータです。
+インラインイテレータは、コンパイラによって常にインライン化され、抽象化のオーバーヘッドがゼロになるイテレータですが、コードサイズが大幅に増加する可能性があります。
+
+注意：インラインイテレーターのforループの本体は、イテレーターコードに表示される各`yield`ステートメントにインライン化されるため、理想的には、コードが肥大化しないように、単一のyieldを含むようにコードをリファクタリングする必要があります。
+
+インラインイテレータは、second class citizensです。
+テンプレート、マクロ、その他のインラインイテレータなど、他のインラインコード機能にのみパラメーターとして渡すことができます。
+
+それとは対照的に、クロージャイテレータはより自由に渡すことができます。
+```nim
+iterator count0(): int {.closure.} =
+  yield 0
+
+iterator count2(): int {.closure.} =
+  var x = 1
+  yield x
+  inc x
+  yield x
+
+proc invoke(iter: iterator(): int {.closure.}) =
+  for x in iter(): echo x
+
+invoke(count0)
+invoke(count2)
+```
+
+クロージャイテレータとインラインイテレータにはいくつかの制限があります。
+
+- 今のところ、クロージャイテレータはコンパイル時に実行できません。
+- returnはクロージャイテレータで許可されていますが、インラインイテレータでは許可されておらず（しかしほとんど有用ではありません）反復を終了します。
+- インラインイテレータもクロージャイテレータも再帰的ではありません。
+- インラインイテレータにもクロージャイテレータにも特別な`result`変数はありません。
+- クロージャイテレータは、jsバックエンドではサポートされていません。
+
+`{.closure.}`とも`{.inline.}`とも、明示的にマークされていないイテレータはデフォルトでインラインですが、これは実装の将来のバージョンで変更されることがあります。
+
+`iterator`型は常に呼び出し規約により暗黙的にクロージャーです。
+次の例は、イテレータを使用して共同作業システムを実装する方法を示しています。
+```nim
+# simple tasking:
+type
+  Task = iterator (ticker: int)
+
+iterator a1(ticker: int) {.closure.} =
+  echo "a1: A"
+  yield
+  echo "a1: B"
+  yield
+  echo "a1: C"
+  yield
+  echo "a1: D"
+
+iterator a2(ticker: int) {.closure.} =
+  echo "a2: A"
+  yield
+  echo "a2: B"
+  yield
+  echo "a2: C"
+
+proc runTasks(t: varargs[Task]) =
+  var ticker = 0
+  while true:
+    let x = t[ticker mod t.len]
+    if finished(x): break
+    x(ticker)
+    inc ticker
+
+runTasks(a1, a2)
+```
+組み込みの`system.finished`を使用して、イテレーターが操作を完了したかどうかを判別できます。
+既に作業を終了したイテレーターを呼び出そうとしても例外は発生しません。
+
+`system.finished`はエラーが発生しやすいことに注意してください。
+これは、イテレータが終了した後に1回だけ`true`を返すためです。
+```nim
+iterator mycount(a, b: int): int {.closure.} =
+  var x = a
+  while x <= b:
+    yield x
+    inc x
+
+var c = mycount # instantiate the iterator
+while not finished(c):
+  echo c(1, 3)
+
+# Produces
+1
+2
+3
+0
+```
+
+かわりに、下のコードを使用する必要があります。
+```nim
+var c = mycount # instantiate the iterator
+while true:
+  let value = c(1, 3)
+  if finished(c): break # and discard 'value'!
+  echo value
+```
+
+イテレータは実際にペア`(value, done)`を返し、`finished`は非表示の`done`フィールドにアクセスするために使用されると考えると役立ちます。
+
+クロージャイテレータは再開可能な関数であるため、すべての呼び出しに引数を提供する必要があります。
+この制限を回避するには、外部ファクトリプロシージャのパラメーターをキャプチャします。
+```nim
+proc mycount(a, b: int): iterator (): int =
+  result = iterator (): int =
+    var x = a
+    while x <= b:
+      yield x
+      inc x
+
+let foo = mycount(1, 4)
+
+for f in foo():
+  echo f
+```
+
+
+
+
 
 ## テンプレート(Templates)
+
+### メソッド呼び出し構文の制限(Limitations of the method call syntax)
 
 ## プラグマ(Pragmas)
 
