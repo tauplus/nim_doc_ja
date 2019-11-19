@@ -3391,6 +3391,156 @@ type # example demonstrating mutually recursive types
 相互再帰型は、単一の型セクション内でのみ可能です。
 オブジェクトや列挙型などの名目上の型は、型セクションでのみ定義できます。
 
+## 例外処理(Exception handling)
+
+### Try statement
+例：
+```nim
+# read the first two lines of a text file that should contain numbers
+# and tries to add them
+var
+  f: File
+if open(f, "numbers.txt"):
+  try:
+    var a = readLine(f)
+    var b = readLine(f)
+    echo "sum: " & $(parseInt(a) + parseInt(b))
+  except OverflowError:
+    echo "overflow!"
+  except ValueError:
+    echo "could not convert string to integer"
+  except IOError:
+    echo "IO error!"
+  except:
+    echo "Unknown exception!"
+  finally:
+    close(f)
+```
+
+`try`の後のステートメントは、例外`e`が発生しない限り、順番に実行されます。
+`e`の例外タイプが`except`節にリストされているものと一致する場合、対応するステートメントが実行されます。
+`except`節に続くステートメントは、例外ハンドラーと呼ばれます。
+
+空の`except`節は、他にリストされていない例外がある場合に実行されます。
+`if`ステートメントの`else`句に似ています。
+
+`finally`節がある場合は、常に例外ハンドラーの後に実行されます。
+
+例外は例外ハンドラーで消費されます。
+ただし、例外ハンドラは別の例外を発生させる場合があります。
+例外が処理されない場合、コールスタックを通じて伝播されます。
+これは、多くの場合、プロシージャの残りの部分（finally節内にない分）は実行されない（例外が発生した場合）。
+
+### Try expression
+`try`は式としても使用できます。
+`try`ブランチの型は例外ブランチの型に適合する必要がありますが、`finally`ブランチのタイプは常に`void`でなければなりません。
+```nim
+let x = try: parseInt("133a")
+        except: -1
+        finally: echo "hi"
+```
+
+コードの混乱を防ぐために、解析の制限があります。`try`が`(`に続く場合、1ライナーとして記述する必要があります。
+```nim
+let x = (try: parseInt("133a") except: -1)
+```
+
+### Except clauses
+except節内では、次の構文を使用して現在の例外にアクセスできます。
+```nim
+try:
+  # ...
+except IOError as e:
+  # Now use "e"
+  echo "I/O error: " & e.msg
+```
+
+または、`getCurrentException`を使用して、発生した例外を取得することもできます。
+```nim
+try:
+  # ...
+except IOError:
+  let e = getCurrentException()
+  # Now use "e"
+```
+
+`getCurrentException`は常に`ref Exception`タイプを返すことに注意してください。
+適切な型の変数が必要な場合（上記の例では`IOError`）、明示的に変換する必要があります。
+```nim
+try:
+  # ...
+except IOError:
+  let e = (ref IOError)(getCurrentException())
+  # "e" is now of the proper type
+```
+
+ただし、これはほとんど必要ありません。
+最も一般的なケースは、`e`からエラーメッセージを抽出することです。
+このような状況では、`getCurrentExceptionMsg`を使用するだけで十分です。
+```nim
+try:
+  # ...
+except:
+  echo getCurrentExceptionMsg()
+```
+
+### Defer statement
+`try finally`ステートメントの代わりに、`defer`ステートメントを使用できます。
+
+現在のブロックの`defer`に続くステートメントは、暗黙的なtryブロックにあると見なされます。
+```nim
+proc main =
+  var f = open("numbers.txt")
+  defer: close(f)
+  f.write "abc"
+  f.write "def"
+```
+は下記に書き換えられます。
+```nim
+proc main =
+  var f = open("numbers.txt")
+  try:
+    f.write "abc"
+    f.write "def"
+  finally:
+    close(f)
+```
+トップレベルの`defer`ステートメントは、そのようなステートメントが何を参照すべきかが不明であるため、サポートされていません。
+
+### Raise statement
+例：
+```nim
+raise newEOS("operating system failed")
+```
+
+配列のインデックス付け、メモリ割り当てなどの組み込み操作は別として、`raise`ステートメントは例外を発生させる唯一の方法です。
+例外名が指定されていない場合、現在の例外が再発生します。
+再発生する例外がない場合、ReraiseError例外が発生します。
+したがって、`raise`ステートメントは常に例外を発生させます。
+
+### Exception hierarchy
+例外ツリーは[system](https://nim-lang.org/docs/system.html)モジュールで定義されます。
+すべての例外は`system.Exception`から継承します。
+プログラミングのバグを示す例外は`system.Defect`（`Exception`のサブタイプ）を継承し、厳密にはキャッチできません。
+これらはプロセス全体を終了する操作にマップすることもできるためです。
+キャッチできるその他のランタイムエラーを示す例外は、`system.CatchableError`（`Exception`のサブタイプ）から継承します。
+
+### Imported exceptions
+インポートされたC ++例外を発生/キャッチすることができます。
+`importcpp`を使用してインポートされた型は、発生または捕捉できます。
+例外は値によってraiseされ、参照によってキャッチされます。
+```nim
+type
+  std_exception {.importcpp: "std::exception", header: "<exception>".} = object
+
+proc what(s: std_exception): cstring {.importcpp: "((char *)#.what())".}
+
+try:
+  raise std_exception()
+except std_exception as ex:
+  echo ex.what()
+```
+
 
 
 
