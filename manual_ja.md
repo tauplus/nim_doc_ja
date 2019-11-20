@@ -3541,7 +3541,99 @@ except std_exception as ex:
   echo ex.what()
 ```
 
+## エフェクトシステム(Effect system)
 
+### 例外追跡(Exception tracking)
+Nimは例外追跡をサポートしています。
+raisesプラグマが明示的にproc/iterator/method/converterで発生することを許可された例外を定義するために使用することができます。
+コンパイラーはこれを検証します。
+```nim
+proc p(what: bool) {.raises: [IOError, OSError].} =
+  if what: raise newException(IOError, "IO")
+  else: raise newException(OSError, "OS")
+```
+
+空の`raises`リスト(`raises: []`)は、例外が発生しないことを意味します。
+```nim
+proc p(): bool {.raises: [].} =
+  try:
+    unsafeCall()
+    result = true
+  except:
+    result = false
+```
+
+`raises`リストは、proc型に付加することもできます。これは型の互換性に影響します。
+```nim
+type
+  Callback = proc (s: string) {.raises: [IOError].}
+var
+  c: Callback
+
+proc p(x: string) =
+  raise newException(OSError, "OS")
+
+c = p # type error
+```
+
+ルーチン`p`に対して、コンパイラは推論規則を使用して、発生する可能性のある例外のセットを決定します。
+アルゴリズムは`p`の呼び出しグラフで動作します
+
+- proc型`T`を介したすべての間接呼び出しは、`system.Exception`（例外階層の基本型）を発生させると想定されているため、`T`に明示的な発生リストがない限り、例外は発生しません。
+ただし、呼び出しの形式が`f(...)`の場合、`f`は現在解析されているルーチンのパラメーターであり、無視されます。
+呼び出しは楽観的に作用がないと見なされます。ルール2はこのケースを補います。
+- 呼び出し自体ではない（かつnilではない）呼び出し内にあるproc型のすべての式は、何らかの方法で間接的に呼び出されると想定されるため、その発生リストは`p`のraisesリストに追加されます。
+- （forward宣言またはimportcプラグマによる）未知のbodyを持つproc `q`の呼び出しはすべて、`q`に明示的な発生リストがない限り、`system.Exception`を発生させると想定されます。
+- メソッド`m`へのすべての呼び出しは、`m`に明示的な`raises`リストがない限り、`system.Exception`を発生させると想定されます。
+- 他のすべての呼び出しについて、解析は正確な`raises`リストを決定できます。
+- `raises`リストを決定するために、`p`の`raise`および`try`ステートメントが考慮されます。
+
+ルール1-2は、以下の機能を保証します。
+```nim
+proc noRaise(x: proc()) {.raises: [].} =
+  # unknown call that might raise anything, but valid:
+  x()
+
+proc doRaise() {.raises: [IOError].} =
+  raise newException(IOError, "IO")
+
+proc use() {.raises: [].} =
+  # doesn't compile! Can raise IOError!
+  noRaise(doRaise)
+```
+
+そのため、多くの場合、コールバックによってコンパイラーのエフェクト分析が過度に保守的になることはありません。
+
+### タグトラッキング(Tag tracking)
+例外追跡は、Nimのエフェクトシステムの一部です。
+例外を発生させることはeffectです。
+他のeffectも定義できます。
+ユーザー定義のeffectは、ルーチンにタグを付け、このタグに対してチェックを実行する手段です。
+```nim
+type IO = object ## input/output effect
+proc readLine(): string {.tags: [IO].} = discard
+
+proc no_IO_please() {.tags: [].} =
+  # the compiler prevents this:
+  let x = readLine()
+```
+
+タグは型名でなければなりません。`tags`リスト（`raises`リストのような）もprocタイプに付加できます。これは型の互換性に影響します。
+
+### エフェクトプラグマ(Effects pragma)
+`effects`プラグマは、プログラマーによるエフェクト解析を支援するように設計されています。
+これは、コンパイラーがすべての推論されたエフェクトを`efects`の位置まで出力するステートメントです。
+```nim
+proc p(what: bool) =
+  if what:
+    raise newException(IOError, "IO")
+    {.effects.}
+  else:
+    raise newException(OSError, "OS")
+```
+
+コンパイラは、`IOError`が発生する可能性があるというヒントメッセージを生成します。
+`OSError`は、エフェクトプラグマが表示されるブランチで発生できないため、リストされていません。
 
 
 
