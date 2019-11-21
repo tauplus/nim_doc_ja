@@ -70,6 +70,7 @@ Nimプログラムは、Nimコードを含む1つ以上のテキストソース�
 
 チェックされたランタイムエラーの結果が例外になるか、致命的なエラーになるかは実装固有です。従って、次のプログラムは無効です。
 コードが範囲外の配列アクセスから`IndexError`をキャッチすることを意図している場合でも、コンパイラは、プログラムが致命的なエラーで死ぬことを許可することを選択する場合があります。
+
 ```nim
 var a: array[0..1, char]
 let i = 5
@@ -147,12 +148,14 @@ i = 0     # これは複数行にまたがる単一のコメントです。
 ### 複数行コメント(Multiline comments)
 Nimのバージョン0.13.0以降では複数行コメントができます。
 例：
+
 ```nim
 #[このように
 複数行にわたって
 コメントができます。]#
 ```
 複数行コメントはネストができます。
+
 ```nim
 #[  #[ Multiline comment in already
    commented out code. ]#
@@ -161,6 +164,7 @@ proc p[T](x: T) = discard
 ```
 
 複数行のドキュメントコメントも存在し、ネストもすることもできます。
+
 ```nim
 proc foo =
   ##[Long documentation comment
@@ -171,6 +175,7 @@ proc foo =
 ### 識別子とキーワード(Identifiers & Keywords)
 Nimの識別子は、文字(letter)で始まり任意の文字(letter)、数字(digit)、アンダースコア`_`を組み合わせた文字列です。
 連続したアンダースコア`__`は使用できません。
+
 ```nim
 letter ::= 'A'..'Z' | 'a'..'z' | '\x80'..'\xff' #文字
 digit ::= '0'..'9'#数字
@@ -206,6 +211,7 @@ yield
 
 ### 識別子の等価性(Identifier equality)
 次のアルゴリズムが真のとき、2つの識別子は等しいとみなされます。
+
 ```nim
 proc sameIdentifier(a, b: string): bool =
   a[0] == b[0] and
@@ -260,6 +266,7 @@ Nimの文字列には、ゼロが埋め込まれていても8ビット値を含�
 便宜上、開始側の`"""`の後に改行が続く場合（`"""`と改行の間に空白がある場合もあります）、改行（およびその前の空白）は文字列に含まれません。
 文字列リテラルの末尾は、パターン`"""[^"]`で定義されます。
 そのため、
+
 ```nim
 """"long string within quotes""""
 ```
@@ -274,10 +281,12 @@ Nimの文字列には、ゼロが埋め込まれていても8ビット値を含�
 
 `r`(または`R`)で始まり、通常の文字列リテラルと同様に`"`で囲まれた生文字列リテラルも使用できます。
 これはエスケープシーケンスを解釈せず、正規表現やWIndowsパスを表すのに特に便利です。
+
 ```nim
 var f = openFile(r"C:\texts\text.txt") # 生文字列なので"\t"はタブではありません
 ```
 生文字列リテラル内で`"`を表すには2つ並べる必要があります。
+
 ```nim
 r"a""b"
 ```
@@ -432,6 +441,7 @@ Nimでは、ユーザー定義可能な演算子を使用できます。二項�
 
 ### 結合性(Associativity)
 最初の文字が`^`である二項演算子は右結合であり、他のすべての二項演算子は左結合です。
+
 ```nim
 proc `^/`(x, y: float): float =
   # 右結合除算演算子
@@ -468,15 +478,18 @@ echo 12  / 4  / 8 # 0.375 (12 / 4 = 3.0, then 3 / 8 = 0.375)
 
 演算子がprefix演算子として使用されるかどうかは、先行する空白の影響も受けます。
 (このパースの変更はバージョン0.13.0で導入されました)
+
 ```nim
 echo $foo
 # is parsed as
 echo($foo)
 ```
 空白は`(a,b)`が引数リストとしてパースされるか、タプルコンストラクタとしてパースされるかも空白によって左右されます。
+
 ```nim
 echo(1, 2) # 1と2をechoに渡す
 ```
+
 ```nim
 echo (1, 2) # タプル(1, 2)をechoに渡す
 ```
@@ -694,6 +707,7 @@ stmt = (IND{>} complexOrSimpleStmt^+(IND{=} / ';') DED)
 
 ### 評価の順序(Order of evaluation)
 評価の順序は、他のほとんどの言語と同様に、厳密に左から右、内から外です。
+
 ```nim
 var s = ""
 
@@ -707,6 +721,7 @@ doAssert s == "123"
 ```
 
 代入は特別ではありません。左辺の式は右辺の前に評価されます。
+
 ```nim
 var v = 0
 proc getI(): int =
@@ -780,6 +795,7 @@ doAssert s == "qppqpq"
 他の静的型付け言語から来た人は驚くかもしれせんが、コンパイル時変数にアクセスして変更する機能は定数式に柔軟性を追加します。
 例えば、次のコードはコンパイル時にフィボナッチ数列の始まり部分を出力します。
 （これは定数の定義における柔軟性のデモンストレーションであり、この問題を解決するための推奨スタイルではありません！）
+
 ```nim
 import strformat
 
@@ -902,6 +918,7 @@ XXビット符号なし整数型は、この命名スキームを使用します
 縮小変換は大きい型を小さい型に変換します(例:`int32 -> int16`)。
 拡大変換は小さい型を大きい型に変換します(例:`int16 -> int32`)。
 Nimでは拡大変換のみが暗黙的です。
+
 ```nim
 var myInt16 = 5i16
 var myInt: int
@@ -916,6 +933,7 @@ myInt16 + 2i32   # of type ``int32``
 subrange型はその基本型となる順序型または浮動小数点型の範囲の値を持ちます。
 subrange型を定義するには、その制限値（型の最小値と最大値）を指定する必要があります。
 例えば、
+
 ```nim
 type
   Subrange = range[0..5]
@@ -956,6 +974,7 @@ IEEE例外は実行中に無視されるか、Nimの例外(FloatInvalidOpError,F
 これらの例外はFloatingPointError基本クラスから継承されます。
 
 Nimは、IEEE例外を無視するかNim例外をトラップするかを制御するプラグマnanChecksおよびinfChecksを提供します。
+
 ```nim
 {.nanChecks: on, infChecks: on.}
 var a = 1.0
@@ -977,12 +996,14 @@ nanChecksプラグマとinfChecksプラグマの組み合わせのショート�
 while、if、elif、when文の条件は`bool`型である必要があります。
 
 この条件は次のとおりです。
+
 ```nim
 ord(false) == 0 and ord(true) == 1
 ```
 
 `not, and, or, xor, <, <=, >, >=, !=, ==`の演算子がブール型に対して定義されています。
 `and`と`or`は短絡評価されます。例えば、
+
 ```nim
 while p != nil and p.name != "xyz":
   # p == nil の時、p.name は評価されません
@@ -1000,12 +1021,14 @@ bool型のサイズは1バイトです。
 
 ### 列挙型(Enumeration types)
 列挙型は、指定された値で構成される値を持つ新しい型を定義します。値は順序付けられています。例えば
+
 ```nim
 type
   Direction = enum
     north, east, south, west
 ```
 これは以下のことが成り立ちます。
+
 ```nim
 ord(north) == 0
 ord(east) == 1
@@ -1023,6 +1046,7 @@ ord(Direction.west) == 3
 順序値が明示的に指定されていないフィールドには、前のフィールドの値+1が割り当てられます
 
 明示的に順序付けられた列挙型には、抜けがある場合があります。
+
 ```nim
 type
   TokenType = enum
@@ -1033,6 +1057,7 @@ type
 
 コンパイラーは、列挙型に対して組み込みのstringify演算子`$`をサポートします。
 stringifyの結果は、使用する文字列値を明示的に指定することで制御できます。
+
 ```nim
 type
   MyEnum = enum
@@ -1046,6 +1071,7 @@ type
 列挙型は、最後の試行としてのみ照会される特別なモジュール固有の隠されたスコープにフィールドが追加されるように、`pure`プラグマでマークできます。
 このスコープには、あいまいでないシンボルのみが追加されます。
 ただし、これらには`MyEnum.value`のように型修飾を記述することで常にアクセスできます。
+
 ```nim
 type
   MyEnum {.pure.} = enum
@@ -1075,10 +1101,12 @@ lengthは終端のゼロをカウントしません。
 
 ほとんどのネイティブなNimの型は、特別な`$`演算子で文字列に変換できます。
 例えば、`echo`プロシージャーを呼び出すと、パラメーターに組み込みのstringfy演算が呼び出されます。
+
 ```nim
 echo 3 # calls `$` for `int`
 ```
 ユーザーが特別なオブジェクトを作成するたびに、このプロシージャの実装は`string`の表現を提供します。
+
 ```nim
 type
   Person = object
@@ -1098,6 +1126,7 @@ proc `$`(p: Person): string = # `$` は常に string を返します
 すべての比較演算子が利用可能です。
 文字列は配列のようにインデックスを付けることができます（下限は0です）。
 配列とは異なり、caseステートメントで使用できます。
+
 ```nim
 case paramStr(i)
 of "-v": incl(options, optVerbose)
@@ -1117,6 +1146,7 @@ Cバックエンドの場合、`cstring`型は、Ansi Cの`char *`型と互換�
 ただし、`cstring`は境界チェックされないため、インデックス演算は安全ではありません。
 
 Nimの`string`は便宜上、暗黙的に`cstring`に変換可能です。Nim`string`がCスタイルの可変長プロシージャに渡されると、暗黙的に`cstring`に変換されます。
+
 ```nim
 proc printf(formatstr: cstring) {.importc: "printf", varargs,
                                   header: "<stdio.h>".}
@@ -1130,6 +1160,7 @@ printf("This works %s", "as expected")
 
 `$`プロシージャーはcstringに対してstringを返すように定義されています。
 従って、cstringからstringを得るには以下のようにします。
+
 ```nim
 var str: string = "Hello!"
 var cstr: cstring = str
@@ -1159,6 +1190,7 @@ var newstr: string = $cstr
 シーケンスはオープン配列型のパラメータに渡すことができます。
 
 例:
+
 ```nim
 type
   IntArray = array[0..5, int] # 配列は 0..5 でインデックス付けられる
@@ -1240,6 +1272,7 @@ myWriteln(stdout, ["abc", "def", "xyz"])
 ```
 この変換は、varargsパラメーターがプロシージャヘッダーの最後のパラメーターである場合にのみ行われます。
 下記のコンテキストで型変換を実行することもできます。
+
 ```nim
 proc myWriteln(f: File, a: varargs[string, `$`]) =
   for s in items(a):
@@ -1253,6 +1286,7 @@ myWriteln(stdout, [$123, $"def", $4.0])
 この例では、パラメーター`a`に渡される引数に`$`が適用されます(`$`は文字列には適用されません)。
 
 `varargs`パラメーターに渡された明示的な配列コンストラクターは、別の暗黙的な配列構築にラップされないことに注意してください。
+
 ```nim
 proc takeV[T](a: varargs[T]) = discard
 
@@ -1262,6 +1296,7 @@ takeV([123, 2, 1]) # Tの型は intでなく、intの配列です
 `varargs[typed]`は特別に扱われます。
 これは、任意の型の引数の変数リストに一致しますが、常に暗黙的な配列を構築します。
 これは、組み込みプロシージャー`echo`が期待される動作を行うために必要です。
+
 ```nim
 proc echo*(x: varargs[typed, `$`]) {...}
 
@@ -1273,6 +1308,7 @@ echo @[1, 2, 3]
 `UncheckedArray[T]`型はその境界をチェックしない特別な種類の配列です。
 これは、カスタマイズされた柔軟なサイズの配列を実装するのに役立ちます。
 さらに、未チェックの配列は、未定サイズのC配列に変換されます。
+
 ```nim
 type
   MySeq = object
@@ -1280,6 +1316,7 @@ type
     data: UncheckedArray[int]
 ```
 上記コードはおおよそ次のCコードを生成します。
+
 ```nim
 typedef struct {
   NI len;
@@ -1318,6 +1355,7 @@ person = ("Peter", 30)
 ```
 
 括弧と末尾のコンマを使用して、名前のないフィールドが1つあるタプルを作成できます。
+
 ```nim
 proc echoUnaryTuple(a: (int,)) =
   echo a[0]
@@ -1330,6 +1368,7 @@ echoUnaryTuple (1,)
 アライメントは、Cコンパイラが行う方法と互換性があります
 
 `object`宣言との一貫性を保つために、`type`セクションのタプルは`[]`の代わりにインデントで定義することもできます。
+
 ```nim
 type
   Person = tuple   # type representing a person
@@ -1341,6 +1380,7 @@ type
 オブジェクトは、継承と情報の隠蔽を提供します。
 オブジェクトは実行時に型にアクセスできるため、`of`演算子を使用してオブジェクトの型を判別できます。
 `of`演算子はJavaの`instanceof`に似ています。
+
 ```nim
 type
   Person = object of RootObj
@@ -1364,6 +1404,7 @@ assert(student of Person) # also true
 ### オブジェクト構築(Object construction)
 オブジェクトは、構文`T(fieldA: valueA, fieldB: valueB, ...)`を持つオブジェクト構築式を使用して作成することもできます。
 ここで、`T`はオブジェクト型または`ref`オブジェクト型です。
+
 ```nim
 var student = Student(name: "Anton", age: 5, id: 3)
 ```
@@ -1375,6 +1416,7 @@ var student = Student(name: "Anton", age: 5, id: 3)
 オブジェクトバリアントは、実行時の型の柔軟性に使用される列挙型によって識別されるタグ付き共用体であり、他の言語に見られる和型と代数データ型(ADTs)の概念を反映しています。
 
 例
+
 ```nim
 # これは、抽象構文ツリーをNimのでモデル化する方法の例である
 type
@@ -1425,6 +1467,7 @@ x.kind = nkSub
 また、オブジェクトの構築中に特定のブランチのフィールドを指定する場合、対応する判別子の値を定数式として指定する必要があります。
 
 アクティブなオブジェクトブランチを変更する代わりに、メモリ内の古いオブジェクトを完全に新しいオブジェクトに置き換えます。
+
 ```nim
 var x = Node(kind: nkAdd, leftOp: Node(kind: nkInt, intVal: 4),
                           rightOp: Node(kind: nkInt, intVal: 2))
@@ -1441,6 +1484,7 @@ x[] = NodeObj(kind: nkString, strVal: "abc")
 `range`型の判別子値の場合、コンパイラは、判別子値の可能な値の範囲全体が選択されたオブジェクトブランチに対して有効かどうかをチェックします。
 
 例
+
 ```nim
 let unknownKind = nkSub
 
@@ -1474,6 +1518,7 @@ z = Node(kind: unknownKindBounded, leftOp: Node(), rightOp: Node())
 
 その理由は、セットが高性能ビットベクトルとして実装されているためです。
 より大きな型でセットを宣言しようとすると、エラーが発生します。
+
 ```nim
 var s: set[int64] # Error: set is too large
 ```
@@ -1481,6 +1526,7 @@ var s: set[int64] # Error: set is too large
 セットは、セットコンストラクターを使用して構築できます。`{}`は空のセットです。
 空のセットは、具体的なセットタイプと互換性のあるタイプです。
 コンストラクターを使用して、要素（および要素の範囲）を含めることもできます。
+
 ```nim
 type
   CharSet = set[char]
@@ -1511,6 +1557,7 @@ x = {'a'..'z', '0'..'9'} # 'a'から'z'の文字と数字の'0'to'9'を含むセ
 これは、論理和`or`をとる必要のある整数定数を定義するよりも、クリーンで（かつ型安全な）解決法です。
 
 列挙型、セット、およびキャストは、次のように一緒に使用できます。
+
 ```nim
 type
   MyFlag* {.size: sizeof(cint).} = enum
@@ -1554,6 +1601,7 @@ Nimは、トレースされた参照とトレースされていない参照を�
 したがって、`addr`の使用は安全でない機能です。
 
 `.`(タプル/オブジェクトフィールドアクセス演算子)および[] (配列/文字列/シーケンスインデックス演算子)演算子は、参照型の暗黙的な逆参照操作を実行します。
+
 ```nim
 type
   Node = ref NodeObj
@@ -1570,6 +1618,7 @@ n.data = 9
 
 ルーチン呼び出しの最初の引数に対しても、自動参照解除が実行されます。
 ただし、現在この機能は`{.experimental： "implicitDeref".}`を介してのみ有効にする必要があります。
+
 ```nim
 {.experimental: "implicitDeref".}
 
@@ -1583,6 +1632,7 @@ echo n.depth
 ```
 
 構造型チェックを簡素化するために、再帰タプルは無効です。
+
 ```nim
 # 無効な再帰
 type MyTuple = tuple[a: ref MyTuple]
@@ -1592,6 +1642,7 @@ type MyTuple = tuple[a: ref MyTuple]
 
 構文の拡張として、`ref`オブジェクトまたは`ptr`オブジェクト表記法を介して型セクションで宣言された場合、`object`型は匿名になります。
 この機能は、オブジェクトが参照セマンティクスのみを取得する必要がある場合に役立ちます。
+
 ```nim
 type
   Node = ref object
@@ -1609,6 +1660,7 @@ Nil
 `nil`の逆参照は、回復不能な致命的なランタイムエラーです。
 参照解除操作`p[]`は、`p`が`nil`でないことを意味します。
 これは、実装によって悪用されて、次のようにコードを最適化できます。
+
 ```nim
 p[].field = 3
 if p != nil:
@@ -1617,6 +1669,7 @@ if p != nil:
   action()
 ```
 が
+
 ```nim
 p[].field = 3
 action()
@@ -1628,6 +1681,7 @@ action()
 ### GCされるメモリとptrの混合(Mixing GC'ed memory with ptr)
 トレースされていないオブジェクトにトレースされた参照、文字列、シーケンスなどのトレースされたオブジェクトが含まれている場合は、特に注意する必要があります。
 すべてを適切に解放するには、トレースされていないメモリを手動で解放する前に、組み込みプロシージャ`GCunref`を呼び出す必要があります
+
 ```nim
 type
   Data = tuple[x, y: int, s: string]
@@ -1660,6 +1714,7 @@ dealloc(d)
 ### Not nil annotation
 nilが有効な値であるすべての型に`not nil`注釈(annotation)を付けて、nilを有効な値から除外できます。
 (訳者注：下記コードをWandboxのNim1.0.2で試そうとした所、`{.experimental: "notnil".}`プラグマを要求されたため、要検証)
+
 ```nim
 type
   PObject = ref TObj not nil
@@ -1684,6 +1739,7 @@ p(x)
 Nimはプロシージャー型を使用して、関数型プログラミング手法を実現します
 
 例
+
 ```nim
 proc printItem(x: int) = ...
 
@@ -1692,6 +1748,7 @@ proc forEach(c: proc (x: int) {.cdecl.}) =
 
 forEach(printItem)  # 呼び出し規約が異なるため、これはコンパイルされません
 ```
+
 ```nim
 type
   OnMouseMove = proc (x, y: int) {.closure.}
@@ -1757,6 +1814,7 @@ distinct型とその基本型の間にはサブタイプの関係がないとい
 例えば、distinct型を使用して、数値ベースタイプを使用して異なる物理ユニットをモデル化できます。次の例では、通貨をモデル化します。
 
 通貨の計算に異なる通貨を混在させないでください。distinct型は、異なる通貨をモデル化するのに最適なツールです。
+
 ```nim
 type
   Dollar = distinct int
@@ -1772,12 +1830,14 @@ echo d + 12
 残念ながら、`d + 12.Dollar`も使用できません。
 これは、`+`が`int`（とりわけ）に対して定義されているがドルに対しては定義されていないためです。
 したがって、ドルに対して`+`を定義する必要があります。
+
 ```nim
 proc `+` (x, y: Dollar): Dollar =
   result = Dollar(int(x) + int(y))
 ```
 
 ドルにドルを掛けることは意味がありませんが、単位のない数字を掛けることは意味があります。除算でも同じことが言えます。
+
 ```nim
 proc `*` (x: Dollar, y: int): Dollar =
   result = Dollar(int(x) * y)
@@ -1791,6 +1851,7 @@ proc `div` ...
 これはすぐに嫌になります。
 実装は些末であり、コンパイラは後で最適化するためだけにこのコードをすべて生成すべきではありません-ドルのすべて`+`はintの`+`と同じバイナリコードを生成する必要があります。
 borrowプラグマは、この問題を解決するように設計されています。 原則として、上記の簡単な実装を生成します。
+
 ```nim
 proc `*` (x: Dollar, y: int): Dollar {.borrow.}
 proc `*` (x: int, y: Dollar): Dollar {.borrow.}
@@ -1799,6 +1860,7 @@ proc `div` (x: Dollar, y: int): Dollar {.borrow.}
 borrowプラグマにより、コンパイラは、distinct型の基本型を処理するprocと同じ実装を使用するため、コードは生成されません。
 
 しかし、このすべての定型コードそユーロ通貨に対して繰り返す必要があるようです。これは[テンプレート](#テンプレートTemplates)で解決できます。
+
 ```nim
 template additive(typ: typedesc) =
   proc `+` *(x, y: typ): typ {.borrow.}
@@ -1831,6 +1893,7 @@ defineCurrency(Euro, int)
 ```
 
 borrowプラグマを使用して、distinct型に注釈を付けて、特定の組み込み演算を引き継ぐこともできます。
+
 ```nim
 type
   Foo = object
@@ -1851,6 +1914,7 @@ bb.s = "abc"
 #### SQLインジェクション攻撃の回避(Avoiding SQL injection attacks)
 NimからSQLデータベースに渡されるSQLステートメントは、文字列としてモデル化される場合があります。
 ただし、文字列テンプレートを使用して値を入力すると、有名なSQLインジェクション攻撃に対して脆弱になります。
+
 ```nim
 import strutils
 
@@ -1865,6 +1929,7 @@ db.query("SELECT FROM users WHERE name = '$1'" % username)
 
 これは、SQLを含む文字列とそうでない文字列を区別することで回避できます。
 distinct型は、`string`と互換性のない新しいストリングタイプ`SQL`を導入する手段を提供します。
+
 ```nim
 type
   SQL = distinct string
@@ -1880,6 +1945,7 @@ db.query("SELECT FROM users WHERE name = '$1'" % username)
 
 抽象型とその基本型との間のサブタイプの関係を暗示しないことは、抽象型の本質的な特性です。
 文字列からSQLへの明示的な型変換が許可されます。
+
 ```nim
 import strutils, sequtils
 
@@ -1904,14 +1970,17 @@ db.query("SELECT FROM users WHERE name = '$1'".SQL % [username])
 ### オート型(Auto type)
 `auto`型は戻り値の型やパラメータのために使用することができます。
 戻り型の場合、コンパイラはルーチン本体から型を推測します。
+
 ```nim
 proc returnsInt(): auto = 1984
 ```
 現在、パラメータについては、暗黙的にジェネリックルーチンが作成されます。
+
 ```nim
 proc foo(a, b: auto) = discard
 ```
 これは次と同じです。
+
 ```nim
 proc foo[T1, T2](a: T1, b: T2) = discard
 ```
@@ -1925,6 +1994,7 @@ proc foo[T1, T2](a: T1, b: T2) = discard
 Nimは、ほとんどの型に対して構造的な型の等価性を使用します。
 オブジェクト、列挙、およびdistinct型に対してのみ、名前の等価性が使用されます。
 次の擬似コードのアルゴリズムは、型の等価性を決定します。
+
 ```nim
 proc typeEqualsAux(a, b: PType,
                    s: var HashSet[(PType, PType)]): bool =
@@ -1965,6 +2035,7 @@ proc typeEquals(a, b: PType): bool =
 ### distictを除外した型の等価性
 次のアルゴリズム（擬似コード）は、2つの型が`distinct`型に関係なく等しいかどうかを判断します。
 簡潔にするために、補助セット`s`を使用したサイクルチェックは省略されています。
+
 ```nim
 proc typeEqualsOrDistinct(a, b: PType): bool =
   if a.kind == b.kind:
@@ -2003,6 +2074,7 @@ proc typeEqualsOrDistinct(a, b: PType): bool =
 ### サブタイプの関係性
 オブジェクト`a`が`b`を継承する場合、`a`は`b`のサブタイプです。
 このサブタイプの関係は、`var`,`ref`,`ptr`型に拡張されます。
+
 ```nim
 proc isSubtype(a, b: PType): bool =
   if a.kind == b.kind:
@@ -2017,6 +2089,7 @@ proc isSubtype(a, b: PType): bool =
 
 ### 変換可能な関係(Convertible relation)
 次のアルゴリズムがtrueを返す場合、型`a`は暗黙的に型`b`に変換可能です。
+
 ```nim
 proc isImplicitlyConvertible(a, b: PType): bool =
   if isSubtype(a, b) or isCovariant(a, b):
@@ -2054,6 +2127,7 @@ proc isImplicitlyConvertible(a, b: PType): bool =
 `A`から`T`への暗黙の型変換が存在します。
 
 次のアルゴリズムがtrueを返す場合、型`a`は型`b`に**明示的**に変換可能です。
+
 ```nim
 proc isIntegralType(t: PType): bool =
   result = isOrdinal(t) or t.kind in {float, float32, float64}
@@ -2067,6 +2141,7 @@ proc isExplicitlyConvertible(a, b: PType): bool =
 ```
 
 変換可能な関係は、ユーザー定義の型コンバーターによって緩和できます。
+
 ```nim
 converter toInt(x: char): int = result = ord(x)
 
@@ -2105,6 +2180,7 @@ argsの全ての引数は一致する必要があります。
 これらの一致カテゴリには優先度があります。
 完全一致はリテラル一致よりも優先され、総称一致などよりも優先されます。
 次の`count(p,m)`では、ルーチン`p`の一致するカテゴリー`m`の一致数をカウントします。
+
 ```nim
 for each matching category m in ["exact match", "literal match",
                                 "generic match", "subtype match",
@@ -2118,6 +2194,7 @@ return "ambiguous"
 ```
 
 いくつかの例：
+
 ```nim
 proc takesInt(x: int) = echo "int"
 proc takesInt[T](x: T) = echo "T"
@@ -2134,6 +2211,7 @@ takesInt(z) # "T"
 
 このアルゴリズムが「曖昧な」結果を返す場合、さらなる曖昧性解消が実行されます。
 引数`a`がサブタイプ関係を介してパラメータータイプ`f`の`p`と`g`の両方に一致する場合、継承の深さが考慮されます。
+
 ```nim
 type
   A = object of RootObj
@@ -2158,6 +2236,7 @@ pp(c, c)
 ```
 
 同様に総称一致の場合、一致する中で最も特化した総称型が優先されます。
+
 ```nim
 proc gen[T](x: ref ref T) = echo "ref ref T"
 proc gen[T](x: ref T) = echo "ref T"
@@ -2169,6 +2248,7 @@ gen(ri) # "ref T"
 
 ### `var T`に基づくオーバーロード
 仮パラメータ`f`が通常の型チェックに加えて`var T`型の場合、引数は左辺値であることがチェックされます。`var T`は、`T`だけであるよりもよく一致します。
+
 ```nim
 proc sayHi(x: int): string =
   # matches a non-var int
@@ -2190,6 +2270,7 @@ sayHello(3) # 3
 注：未解決の式とは、シンボルの検索や型チェックが実行されていない式です。
 `immediate `として宣言されていないテンプレートとマクロはオーバーロードに関与するため、未解決の式をテンプレートまたはマクロに渡す方法が不可欠です。
 これは、`untyped`メタタイプが達成することです。
+
 ```nim
 template rem(x: untyped) = discard
 
@@ -2199,6 +2280,7 @@ rem unresolvedExpression(undeclaredIdentifier)
 `untyped`型のパラメータは常に引数に一致します(引数に一致する限り)。
 
 ただし、他のオーバーロードが引数の解決をトリガーする可能性があるため、注意が必要です。
+
 ```nim
 template rem(x: untyped) = discard
 proc rem[T](x: T) = discard
@@ -2232,6 +2314,7 @@ Nimは一般的なステートメント/式のパラダイムを使用します�
 
 ### Discardステートメント(Discard statement)
 例：
+
 ```nim
 proc p(x, y: int): int =
   result = x + y
@@ -2243,6 +2326,7 @@ discard p(3, 4) # `p`の戻り値を破棄
 
 discardステートメントを使用せずにプロシージャの戻り値を無視すると、静的エラーになります。
 呼び出されたproc/iteratorがdiscardableプラグマで宣言されている場合、戻り値は暗黙的に無視できます。
+
 ```nim
 proc p(x, y: int): int {.discardable.} =
   result = x + y
@@ -2251,6 +2335,7 @@ p(3, 4) # now valid
 ```
 
 空のdiscardステートメントは、多くの場合、nullステートメントとして使用されます。
+
 ```nim
 proc classify(s: string) =
   case s[0]
@@ -2262,6 +2347,7 @@ proc classify(s: string) =
 ### Void context
 ステートメントのリストでは、最後の式を除くすべての式が`void`型である必要があります。
 この規則に加えて、組み込み`result`シンボルへの割り当てを行った場合、後続の式が全て`void`コンテキストである必要があります。
+
 ```nim
 proc invalid*(): string =
   result = "foo"
@@ -2277,6 +2363,7 @@ proc valid*(): string =
 ### Var statement
 Varステートメントは、新しいローカル変数とグローバル変数を宣言し、それらを初期化します。
 変数のコンマ区切りリストを使用して、同じ型の変数を指定できます。
+
 ```nim
 var
   a: int = 0
@@ -2304,12 +2391,14 @@ var
 |T = enum|castT; これは無効な値である可能性があります|
 
 noinitプラグマを使用すると、最適化のために暗黙的な初期化を回避できます。
+
 ```nim
 var
   a {.noInit.}: array[0..1023, char]
 ```
 
 procに`noinit`プラグマで注釈が付けられている場合、暗黙の`result`変数を参照します。
+
 ```nim
 proc returnUndefinedValue: int {.noinit.} = discard
 ```
@@ -2317,6 +2406,7 @@ proc returnUndefinedValue: int {.noinit.} = discard
 暗黙的な初期化は、requiresInit型プラグマによっても防ぐことができます。
 コンパイラは、オブジェクトとそのすべてのフィールドの明示的な初期化を必要とします。
 ただし、変数が初期化されたことを証明するために制御フロー分析を行い、構文プロパティに依存しません。
+
 ```nim
 type
   MyObject = object {.requiresInit.}
@@ -2342,6 +2432,7 @@ let変数では、通常の変数と同じプラグマを使用できます。
 ### Tuple unpacking
 `var`または`let`ステートメントでタプルのアンパックを実行できます。
 特別な識別子`_`を使用して、タプルの一部を無視できます。
+
 ```nim
 proc returnsTuple(): (int, int, int) = (4, 2, 3)
 
@@ -2350,6 +2441,7 @@ let (x, _, z) = returnsTuple()
 
 ### Const section
 constセクションは、値が定数式である定数を宣言します。
+
 ```nim
 import strutils
 const
@@ -2364,6 +2456,7 @@ const
 ### Static statement/expression
 静的ステートメント/式は、コンパイル時の実行を明示的に必要とします。
 副作用のあるコードでさえ、静的ブロックはで許可されています。
+
 ```nim
 static:
   echo "echo at compile time"
@@ -2375,6 +2468,7 @@ static:
 
 ### If statement
 例
+
 ```nim
 var name = readLine(stdin)
 
@@ -2395,6 +2489,7 @@ else:
 
 `if`ステートメントでは、新しいスコープは`if/elif/else`キーワードの直後から始まり、対応するthenブロックの後に終わります。
 次の例ではスコープは視覚化のために`{| |}`で囲まれています。
+
 ```nim
 if {| (let m = input =~ re"(\w+)=\w+"; m.isMatch):
   echo "key ", m[0], " value ", m[1]  |}
@@ -2406,6 +2501,7 @@ else: {|
 
 ### Case statement
 例：
+
 ```nim
 case readline(stdin)
 of "delete-everything", "restart-computer":
@@ -2437,6 +2533,7 @@ case readline(stdin):
 
 特別なセマンティック拡張として、`case`ステートメントの`of`ブランチの式は、セットまたは配列コンストラクターで評価することもできます。
 セットまたは配列は、その要素のリストに展開されます。
+
 ```nim
 const
   SymChars: set[char] = {'a'..'z', 'A'..'Z', '\x80'..'\xFF'}
@@ -2457,6 +2554,7 @@ proc classify(s: string) =
 
 ### When statement
 例：
+
 ```nim
 when sizeof(int) == 2:
   echo "running on a 16 bit system!"
@@ -2480,6 +2578,7 @@ else:
 `nimvm`は特別なシンボルであり、コンパイル時と実行可能ファイルの実行パスを区別するための`when nimvm`ステートメントの式として使用できます。
 
 例：
+
 ```nim
 proc someProcThatMayRunInCompileTime(): bool =
   when nimvm:
@@ -2503,6 +2602,7 @@ assert(rtValue == false)
 
 ### Return statement
 例：
+
 ```nim
 return 40+2
 ```
@@ -2510,6 +2610,7 @@ return 40+2
 `return`ステートメントは、現在のプロシージャの実行を終了します。
 プロシージャでのみ許可されます。
 `expr`がある場合、これは次の構文糖衣です
+
 ```nim
 result = expr
 return result
@@ -2519,6 +2620,7 @@ return result
 return変数は常にプロシージャーの戻り値です。
 これはコンパイラによって自動的に宣言されます。
 `result`は(バイナリ)ゼロに初期化されます。
+
 ```nim
 proc returnZero(): int =
   # implicitly returns 0
@@ -2526,6 +2628,7 @@ proc returnZero(): int =
 
 ### Yield statement
 例：
+
 ```nim
 yield (1, 2, 3)
 ```
@@ -2537,6 +2640,7 @@ Yieldは反復プロセスを終了しませんが、次の反復が開始され
 
 ### Block statement
 例：
+
 ```nim
 var found = false
 block myblock:
@@ -2554,6 +2658,7 @@ echo found
 
 ### Break statement
 例：
+
 ```nim
 break
 ```
@@ -2564,6 +2669,7 @@ break
 
 ### While statement
 例：
+
 ```nim
 echo "Please tell me your password:"
 var pw = readLine(stdin)
@@ -2580,6 +2686,7 @@ while pw != "12345":
 `continue`ステートメントは、ループ構造の次の反復に移ります。
 ループ内でのみ許可されます。
 `continue`ステートメントは、ネストされたブロックの糖衣構文です。
+
 ```nim
 while expr1:
   stmt1
@@ -2587,6 +2694,7 @@ while expr1:
   stmt2
 ```
 は以下と同等です。
+
 ```nim
 while expr1:
   block myBlockName:
@@ -2599,6 +2707,7 @@ while expr1:
 Nimコードへのアセンブラコードの直接埋め込みは、アンセーフな`asm`ステートメントによってサポートされています。
 Nim識別子を参照するアセンブラコード内の識別子は、ステートメントのプラグマで指定できる特殊文字で囲む必要があります。
 デフォルトの特殊文字は'`'です。
+
 ```nim
 {.push stackTrace:off.}
 proc addInt(a, b: int): int =
@@ -2614,6 +2723,7 @@ proc addInt(a, b: int): int =
 ```
 
 GNUアセンブラーを使用する場合、引用符と改行が自動的に挿入されます。
+
 ```nim
 proc addInt(a, b: int): int =
   asm """
@@ -2626,6 +2736,7 @@ proc addInt(a, b: int): int =
   """
 ```
 は次の代わりになります。
+
 ```nim
 proc addInt(a, b: int): int =
   asm """
@@ -2640,6 +2751,7 @@ proc addInt(a, b: int): int =
 
 ### Using statement
 usingステートメントは、同じパラメーター名と型が繰り返し使用されるモジュールで構文上の利便性を提供します。
+
 ```nim
 proc foo(c: Context; n: Node) = ...
 proc bar(c: Context; n: Node, counter: int) = ...
@@ -2647,6 +2759,7 @@ proc baz(c: Context; n: Node) = ...
 ```
 
 名前`c`のパラメーターはデフォルトで`Context`型になり、`n`はデフォルトで`Node`などになるという規則についてコンパイラーに伝えることができます。
+
 ```nim
 using
   c: Context
@@ -2672,6 +2785,7 @@ proc mixedMode(c, n; x, y: int) =
 
 ### If expression
 `if expression `はif文とほとんど同じですが、式です。
+
 ```nim
 var y = if x > 8: 9 else: 10
 ```
@@ -2683,6 +2797,7 @@ if式の結果は常に値になるため、`else`のパートが必要です。
 
 ### Case expression
 `case expression`もまた、caseステートメントにとてもよく似ています。
+
 ```nim
 var favoriteFood = case animal
   of "dog": "bones"
@@ -2699,6 +2814,7 @@ var favoriteFood = case animal
 ### Block expression
 `block expression`は、ブロックステートメントに似ていますが、ブロックの下の最後の式を値として使用する式です。
 ステートメントリスト式に似ていますが、ステートメントリスト式は新しいブロックスコープを開きません。
+
 ```nim
 let a = block:
   var fib = @[0, 1]
@@ -2709,6 +2825,7 @@ let a = block:
 
 ### Table constructor
 テーブルコンストラクターは、配列コンストラクターの糖衣構文です。
+
 ```nim
 {"key1": "value1", "key2", "key3": "value2"}
 
@@ -2732,6 +2849,7 @@ Nimの型変換よりも通常のprocが好まれることがよくあります�
 たとえば、慣例により$は`toString`演算子であり、`toFloat`と`toInt`を使用して浮動小数点から整数へ、またはその逆に変換できます。
 
 型変換は、オーバーロードされたルーチンを明確にするためにも使用できます。
+
 ```nim
 proc p(x: int) = echo "int"
 proc p(x: string) = echo "string"
@@ -2742,6 +2860,7 @@ procVar("a")
 
 ### 型キャスト(Type casts)
 例：
+
 ```nim
 cast[int](x)
 ```
@@ -2773,6 +2892,7 @@ echo repr(addr(t1))
 
 ### アンセーフアドレス演算子(The unsafeAddr operator)
 `C`などの他のコンパイル言語との相互運用を容易にするため、`let`変数、パラメーター、または`for`ループ変数のアドレスを取得するには、`unsafeAddr`演算を使用できます。
+
 ```nim
 let myArray = [1, 2, 3]
 foreignProcThatTakesAnAddr(unsafeAddr myArray)
@@ -2785,6 +2905,7 @@ foreignProcThatTakesAnAddr(unsafeAddr myArray)
 パラメーターには、`typename`によって型が与えられます。
 型は、パラメーターリストの先頭、セミコロン区切り文字、または既に入力されたパラメーターのいずれかに到達するまで、その直前のすべてのパラメーターに適用されます。
 セミコロンを使用して、タイプの分離と後続の識別子をより明確にすることができます。
+
 ```nim
 # Using only commas
 proc foo(a, b: int, c, d: bool): int
@@ -2797,12 +2918,14 @@ proc foo(a; b: int; c, d: bool): int
 ```
 
 パラメータは、呼び出し側が引数に値を提供しない場合に使用されるデフォルト値で宣言できます。
+
 ```nim
 # b is optional with 47 as its default value
 proc foo(a: int, b: int = 47): int
 ```
 
 型修飾子`var`を使用してパラメーターをミュータブルとして宣言し、procがこれらの引数を変更できるようになります。
+
 ```nim
 # "returning" a value to the caller through the 2nd argument
 # Notice that the function uses no actual return value at all (ie void)
@@ -2813,6 +2936,7 @@ proc foo(inp: int, outp: var int) =
 proc宣言に本体がない場合は、前方宣言です。
 プロシージャが値を返す場合、プロシージャ本体は、戻り値を表す`result`という名前の暗黙的に宣言された変数にアクセスできます。
 Procsはオーバーロードされる可能性があります。オーバーロード解決アルゴリズムは、引数に最適なprocを決定します。
+
 ```nim
 proc toLower(c: char): char = # toLower for characters
   if c in {'A'..'Z'}:
@@ -2827,6 +2951,7 @@ proc toLower(s: string): string = # toLower for strings
 ```
 
 プロシージャの呼び出しは、さまざまな方法で実行できます。
+
 ```nim
 proc callme(x, y: int, s: string = "", c: char, b: bool = false) = ...
 
@@ -2843,6 +2968,7 @@ callme 0, 1, "abc", '\t'              # (x=0, y=1, s="abc", c='\t', b=false)
 プロシージャは、それ自体を再帰的に呼び出すことができます。
 
 演算子は、識別子として特別な演算子記号を使用したプロシージャです。
+
 ```nim
 proc `$` (x: int): string =
   # converts an integer to a string; this is a prefix operator.
@@ -2855,6 +2981,7 @@ proc `$` (x: int): string =
 すべての後置演算子は組み込みであり、文法によって明示的に処理されます。
 
 \`opr\`表記を使用して、通常のprocのように任意の演算子を呼び出すことができます。（したがって、演算子は3つ以上のパラメーターを持つことができます）
+
 ```nim
 proc `*+` (a, b, c: int): int =
   # Multiply and add
@@ -2865,6 +2992,7 @@ assert `*+`(3, 4, 6) == `+`(`*`(a, b), c)
 
 ### Export marker
 宣言されたシンボルがアスタリスクでマークされている場合、現在のモジュールからエクスポートされます。
+
 ```nim
 proc exportedEcho*(s: string) = echo s
 proc `*`*(a: string; b: int): string =
@@ -2883,6 +3011,7 @@ type
 引数が残っていない場合は括弧を省略できます：`len(obj)`の代わりに`obj.len`。
 
 このメソッド呼び出し構文はオブジェクトに限定されず、プロシージャの任意の型の最初の引数を提供するために使用できます。
+
 ```nim
 echo "abc".len # is the same as echo len "abc"
 echo "abc".toUpper()
@@ -2905,6 +3034,7 @@ stdout.writeLine("Hallo") # the same as writeLine(stdout, "Hallo")
 Nimはget-propertiesを必要としません。
 メソッド呼び出し構文で呼び出される通常のget-proceduresは同じことを達成します。
 ただし、値の設定は異なります。このためには、特別なセッター構文​​が必要です。
+
 ```nim
 # Module asocket
 type
@@ -2936,6 +3066,7 @@ s.host = 34  # same as `host=`(s, 34)
 
 `f=`(後ろに`=`がつく)として定義されたprocはセッターと呼ばれます。
 セッターはバッククォート表記を介して明示的に呼び出すことができます。
+
 ```nim
 proc `f=`(x: MyObject; value: string) =
   discard
@@ -2984,6 +3115,7 @@ assert x == y
 
 ### 匿名プロシージャー(Anonymous Procs)
 名前のないプロシージャは、他のプロシージャに渡すラムダ式として使用できます。
+
 ```nim
 var cities = @["Frankfurt", "Tokyo", "New York", "Kyiv"]
 
@@ -2996,16 +3128,19 @@ cities.sort(proc (x,y: string): int =
 
 ### 関数(func)
 `func`キーワードは、副作用のないプロシージャの短縮表記です。
+
 ```nim
 func binarySearch[T](a: openArray[T]; elem: T): int
 ```
 は下記の短縮形です。
+
 ```nim
 proc binarySearch[T](a: openArray[T]; elem: T): int {.noSideEffect.}
 ```
 
 ### オーバーロードできない組込み機能(Nonoverloadable builtins)
 次の組み込みプロシージャは、実装が単純であるため、オーバーロードできません（特別なセマンティックチェックが必要です）。
+
 ```nim
 declared, defined, definedInScope, compiles, sizeOf,
 is, shallowCopy, getAst, astToStr, spawn, procCall
@@ -3014,12 +3149,14 @@ is, shallowCopy, getAst, astToStr, spawn, procCall
 したがって、通常の識別子よりもキーワードのように機能します。
 ただし、キーワードとは異なり、再定義は`system`モジュールの定義をシャドウイングする場合があります。
 このリストから、`x`は`f`に渡される前に型チェックできないため、ドット表記`x.f`で次のように記述しないでください。
+
 ```nim
 declared, defined, definedInScope, compiles, getAst, astToStr
 ```
 
 ### Varパラメーター(Var parameters)
 パラメーターのタイプには、`var`キーワードをプレフィックスとして付けることができます。
+
 ```nim
 proc divmod(a, b: int; res, remainder: var int) =
   res = a div b
@@ -3052,6 +3189,7 @@ assert y == 3
 
 この例では、varパラメーターまたはポインターを使用して2つの戻り値を提供しています。
 これは、タプルを返すことにより、よりクリーンな方法で実行できます。
+
 ```nim
 proc divmod(a, b: int): tuple[res, remainder: int] =
   (a div b, a mod b)
@@ -3063,6 +3201,7 @@ assert t.remainder == 3
 ```
 
 タプルのアンパックを使用して、タプルのフィールドにアクセスできます。
+
 ```nim
 var (x, y) = divmod(8, 5) # tuple unpacking
 assert x == 1
@@ -3074,6 +3213,7 @@ var以外のパラメーターは変更できないことで、コンパイラ�
 ### Var return type
 proc,converter,iteratorは`var`型を返す場合があります。
 これは、戻り値が左辺値であり、呼び出し元が変更できることを意味します。
+
 ```nim
 var g = 0
 
@@ -3085,6 +3225,7 @@ assert g == 6
 ```
 
 暗黙的に導入されたポインターを使用して、その存続期間を超えてlocationにアクセスできる場合は、静的エラーです。
+
 ```nim
 proc writeAccessToG(): var int =
   var g = 0
@@ -3092,6 +3233,7 @@ proc writeAccessToG(): var int =
 ```
 
 イテレータの場合、タプルの戻り値型のコンポーネントには`var`型も含めることができます。
+
 ```nim
 iterator mpairs(a: var seq[string]): tuple[key: int, val: var string] =
   for i in 0..a.high:
@@ -3102,6 +3244,7 @@ iterator mpairs(a: var seq[string]): tuple[key: int, val: var string] =
 
 `var T`で返すためのメモリの安全性は、単純な借用ルールによって保証されます：
 `result`がヒープを指す場所を参照しない場合（つまり、`result = X`で`X`が`ptr`か`ref`アクセスを含まない）、ルーチンの最初のパラメーターによって逸脱する必要があります ：
+
 ```nim
 proc forward[T](x: var T): var T =
   result = x # ok, deviated from the first parameter.
@@ -3119,6 +3262,7 @@ proc p(param: var int): var int =
 
 #### 今後の方向性(Future directions)
 Nimの今後のバージョンでは、次のような構文を使用して借用ルールをより正確にできます。
+
 ```nim
 proc foo(other: Y; container: var X): var T from container
 ```
@@ -3135,6 +3279,7 @@ proc foo(other: Y; container: var X): var T from container
 プロシージャは常に静的ディスパッチを使用します。
 マルチメソッドは動的ディスパッチを使用します。
 動的ディスパッチがオブジェクトで機能するには、オブジェクトが参照型である必要があります。
+
 ```nim
 type
   Expression = ref object of RootObj ## abstract base class for an expression
@@ -3177,6 +3322,7 @@ baseプラグマは、maseメソッドmがmの呼び出しが引き起こす可�
 ### procCallによる動的メソッド解決の禁止(Inhibit dynamic method resolution via procCall)
 組み込みのsystem.procCallを使用して、動的メソッドの解決を禁止できます。
 これは、従来のOOP言語が提供するsuperキーワードにいくらか匹敵します。
+
 ```nim
 type
   Thing = ref object of RootObj
@@ -3204,6 +3350,7 @@ forループは反復変数を宣言します。それらのスコープはル�
 `for`ループの実行における重要な役割は、呼び出されたイテレーターで`yield`ステートメントを果たします。
 `yield`ステートメントに到達すると、データは`for`ループ変数にバインドされ、`for`ループの本体で制御が継続されます。
 イテレータのローカル変数と実行状態は、呼び出し間で自動的に保存されます。
+
 ```nim
 # this definition exists in the system module
 iterator items*(a: string): char {.inline.} =
@@ -3217,6 +3364,7 @@ for ch in items("hello world"): # `ch` is an iteration variable
 ```
 
 コンパイラは次のようにプログラマが書いたかのようなコードを生成します。
+
 ```nim
 var i = 0
 while i < len(a):
@@ -3231,6 +3379,7 @@ i番目の反復変数の型は、i番目のコンポーネントの型です。
 
 ### 暗黙的なアイテム/ペアの呼び出し(Implict items/pairs invocations)
 forループ式`e`がイテレータを示さず、forループに変数が1つだけある場合、forループ式は`items(e)`に書き換えられます。すなわち、アイテムイテレータが暗黙的に呼び出されます。
+
 ```nim
 for x in [1,2,3]: echo x
 ```
@@ -3248,6 +3397,7 @@ Nimには2種類のイテレータがあります：インラインイテレー�
 テンプレート、マクロ、その他のインラインイテレータなど、他のインラインコード機能にのみパラメーターとして渡すことができます。
 
 それとは対照的に、クロージャイテレータはより自由に渡すことができます。
+
 ```nim
 iterator count0(): int {.closure.} =
   yield 0
@@ -3277,6 +3427,7 @@ invoke(count2)
 
 `iterator`型は常に呼び出し規約により暗黙的にクロージャーです。
 次の例は、イテレータを使用して共同作業システムを実装する方法を示しています。
+
 ```nim
 # simple tasking:
 type
@@ -3313,6 +3464,7 @@ runTasks(a1, a2)
 
 `system.finished`はエラーが発生しやすいことに注意してください。
 これは、イテレータが終了した後に1回だけ`true`を返すためです。
+
 ```nim
 iterator mycount(a, b: int): int {.closure.} =
   var x = a
@@ -3332,6 +3484,7 @@ while not finished(c):
 ```
 
 かわりに、下のコードを使用する必要があります。
+
 ```nim
 var c = mycount # instantiate the iterator
 while true:
@@ -3344,6 +3497,7 @@ while true:
 
 クロージャイテレータは再開可能な関数であるため、すべての呼び出しに引数を提供する必要があります。
 この制限を回避するには、外部ファクトリプロシージャのパラメーターをキャプチャします。
+
 ```nim
 proc mycount(a, b: int): iterator (): int =
   result = iterator (): int =
@@ -3360,6 +3514,7 @@ for f in foo():
 
 ## コンバーター(Converters)
 コンバーターは、「暗黙的に変換可能な」型の関係を拡張することを除いて、通常のプロシージャに似ています([変換可能な関係](#変換可能な関係Convertible-relation)を参照)。
+
 ```nim
 # bad style ahead: Nim is not C.
 converter toBool(x: int): bool = x != 0
@@ -3374,6 +3529,7 @@ if 4:
 
 ## 型セクション(Type sections)
 例：
+
 ```nim
 type # example demonstrating mutually recursive types
   Node = ref object  # an object managed by the garbage collector (ref)
@@ -3395,6 +3551,7 @@ type # example demonstrating mutually recursive types
 
 ### Try statement
 例：
+
 ```nim
 # read the first two lines of a text file that should contain numbers
 # and tries to add them
@@ -3434,6 +3591,7 @@ if open(f, "numbers.txt"):
 ### Try expression
 `try`は式としても使用できます。
 `try`ブランチの型は例外ブランチの型に適合する必要がありますが、`finally`ブランチのタイプは常に`void`でなければなりません。
+
 ```nim
 let x = try: parseInt("133a")
         except: -1
@@ -3441,12 +3599,14 @@ let x = try: parseInt("133a")
 ```
 
 コードの混乱を防ぐために、解析の制限があります。`try`が`(`に続く場合、1ライナーとして記述する必要があります。
+
 ```nim
 let x = (try: parseInt("133a") except: -1)
 ```
 
 ### Except clauses
 except節内では、次の構文を使用して現在の例外にアクセスできます。
+
 ```nim
 try:
   # ...
@@ -3456,6 +3616,7 @@ except IOError as e:
 ```
 
 または、`getCurrentException`を使用して、発生した例外を取得することもできます。
+
 ```nim
 try:
   # ...
@@ -3466,6 +3627,7 @@ except IOError:
 
 `getCurrentException`は常に`ref Exception`タイプを返すことに注意してください。
 適切な型の変数が必要な場合（上記の例では`IOError`）、明示的に変換する必要があります。
+
 ```nim
 try:
   # ...
@@ -3477,6 +3639,7 @@ except IOError:
 ただし、これはほとんど必要ありません。
 最も一般的なケースは、`e`からエラーメッセージを抽出することです。
 このような状況では、`getCurrentExceptionMsg`を使用するだけで十分です。
+
 ```nim
 try:
   # ...
@@ -3488,6 +3651,7 @@ except:
 `try finally`ステートメントの代わりに、`defer`ステートメントを使用できます。
 
 現在のブロックの`defer`に続くステートメントは、暗黙的なtryブロックにあると見なされます。
+
 ```nim
 proc main =
   var f = open("numbers.txt")
@@ -3496,6 +3660,7 @@ proc main =
   f.write "def"
 ```
 は下記に書き換えられます。
+
 ```nim
 proc main =
   var f = open("numbers.txt")
@@ -3509,6 +3674,7 @@ proc main =
 
 ### Raise statement
 例：
+
 ```nim
 raise newEOS("operating system failed")
 ```
@@ -3529,6 +3695,7 @@ raise newEOS("operating system failed")
 インポートされたC ++例外を発生/キャッチすることができます。
 `importcpp`を使用してインポートされた型は、発生または捕捉できます。
 例外は値によってraiseされ、参照によってキャッチされます。
+
 ```nim
 type
   std_exception {.importcpp: "std::exception", header: "<exception>".} = object
@@ -3547,6 +3714,7 @@ except std_exception as ex:
 Nimは例外追跡をサポートしています。
 raisesプラグマが明示的にproc/iterator/method/converterで発生することを許可された例外を定義するために使用することができます。
 コンパイラーはこれを検証します。
+
 ```nim
 proc p(what: bool) {.raises: [IOError, OSError].} =
   if what: raise newException(IOError, "IO")
@@ -3554,6 +3722,7 @@ proc p(what: bool) {.raises: [IOError, OSError].} =
 ```
 
 空の`raises`リスト(`raises: []`)は、例外が発生しないことを意味します。
+
 ```nim
 proc p(): bool {.raises: [].} =
   try:
@@ -3564,6 +3733,7 @@ proc p(): bool {.raises: [].} =
 ```
 
 `raises`リストは、proc型に付加することもできます。これは型の互換性に影響します。
+
 ```nim
 type
   Callback = proc (s: string) {.raises: [IOError].}
@@ -3589,6 +3759,7 @@ c = p # type error
 - `raises`リストを決定するために、`p`の`raise`および`try`ステートメントが考慮されます。
 
 ルール1-2は、以下の機能を保証します。
+
 ```nim
 proc noRaise(x: proc()) {.raises: [].} =
   # unknown call that might raise anything, but valid:
@@ -3609,6 +3780,7 @@ proc use() {.raises: [].} =
 例外を発生させることはeffectです。
 他のeffectも定義できます。
 ユーザー定義のeffectは、ルーチンにタグを付け、このタグに対してチェックを実行する手段です。
+
 ```nim
 type IO = object ## input/output effect
 proc readLine(): string {.tags: [IO].} = discard
@@ -3623,6 +3795,7 @@ proc no_IO_please() {.tags: [].} =
 ### エフェクトプラグマ(Effects pragma)
 `effects`プラグマは、プログラマーによるエフェクト解析を支援するように設計されています。
 これは、コンパイラーがすべての推論されたエフェクトを`efects`の位置まで出力するステートメントです。
+
 ```nim
 proc p(what: bool) =
   if what:
@@ -3640,6 +3813,7 @@ proc p(what: bool) =
 コンテキストに応じて、型パラメーターを導入するかジェネリックproc,イテレーター,型をインスタンス化するために角カッコ`[]`が使用されます。
 
 次の例はジェネリック2分木がモデル化できることを示しています。
+
 ```nim
 type
   BinaryTree*[T] = ref object # BinaryTree is a generic type with
@@ -3701,6 +3875,7 @@ for str in preorder(root):
 ### Is operator
 `is`演算子は、型の等価性をチェックするためにセマンティック解析中に評価されます。
 したがって、ジェネリックコード内の型の特化に非常に役立ちます。
+
 ```nim
 type
   Table[Key, Value] = object
@@ -3733,6 +3908,7 @@ Nimは次の組み込み型クラスをサポートしています。
 さらに、すべてのジェネリック型は、ジェネリック型のインスタンス化と一致する同じ名前の型クラスを自動的に作成します。
 
 標準のブール演算子を使用して型クラスを組み合わせて、より複雑な型クラスを作成できます。
+
 ```nim
 # create a type class that will match all tuple and object types
 type RecordType = tuple or object
@@ -3747,6 +3923,7 @@ proc printFields[T: RecordType](rec: T) =
 型のクラスでは、オブジェクトのバリアントやメソッドとは異なり、実行時の型のダイナミズムは許可されません。
 
 例として、次はコ​​ンパイルされません。
+
 ```nim
 type TypeClass = int | string
 var foo: TypeClass = 2 # foo's type is resolved to an int here
@@ -3754,6 +3931,7 @@ foo = "this will fail" # error here, because foo is an int
 ```
 
 Nimでは、ジェネリック型パラメーターの型制約として型クラスと通常の型を指定できます。
+
 ```nim
 proc onlyIntOrString[T: int|string](x, y: T) = discard
 
@@ -3764,6 +3942,7 @@ onlyIntOrString("xy", 50) # invalid as 'T' cannot be both at the same time
 
 ### 暗黙のジェネリック(Implicit generics)
 型クラスは、パラメータの型として直接使用できます。
+
 ```nim
 # create a type class that will match all tuple and object types
 type RecordType = tuple or object
@@ -3778,6 +3957,7 @@ proc printFields(rec: RecordType) =
 
 デフォルトでは、オーバーロードの解決中に、各名前付き型クラスは厳密に1つの具象型にバインドされます。
 このような型クラスをバインド型と呼びます。これを説明するために、システムモジュールから直接取得した例を次に示します。
+
 ```nim
 proc `==`*(x, y: tuple): bool =
   ## requires `x` and `y` to be of the same tuple type
@@ -3793,6 +3973,7 @@ proc `==`*(x, y: tuple): bool =
 
 暗黙的なジェネリックスタイルで記述されたProcは、多くの場合、一致したジェネリック型の型パラメーターを参照する必要があります。
 これらは、ドット構文を使用して簡単にアクセスできます。
+
 ```nim
 type Matrix[T, Rows, Columns] = object
   ...
@@ -3802,6 +3983,7 @@ proc `[]`(m: Matrix, row, col: int): Matrix.T =
 ```
 
 暗黙のジェネリックを示す他の例は次のとおりです。
+
 ```nim
 proc p(t: Table; k: Table.Key): Table.Value
 
@@ -3809,6 +3991,7 @@ proc p(t: Table; k: Table.Key): Table.Value
 
 proc p[Key, Value](t: Table[Key, Value]; k: Key): Value
 ```
+
 ```nim
 proc p(a: Table, b: Table)
 
@@ -3816,6 +3999,7 @@ proc p(a: Table, b: Table)
 
 proc p[Key, Value](a, b: Table[Key, Value])
 ```
+
 ```nim
 proc p(a: Table, b: distinct Table)
 
@@ -3825,6 +4009,7 @@ proc p[Key, Value, KeyB, ValueB](a: Table[Key, Value], b: Table[KeyB, ValueB])
 ```
 
 パラメータタイプとして使用される `typedesc`は、暗黙的なジェネリックも導入します。`typedesc`には独自のルールセットがあります。
+
 ```nim
 proc p(a: typedesc)
 
@@ -3834,6 +4019,7 @@ proc p[T](a: typedesc[T])
 ```
 
 typedescは「bind many」型クラスです。
+
 ```nim
 proc p(a, b: typedesc)
 
@@ -3844,6 +4030,7 @@ proc p[T, T2](a: typedesc[T], b: typedesc[T2])
 
 タイプ`typedesc`のパラメーター自体は、型として使用できます。
 型として使用される場合は、基になる型です。（つまり、「typedesc」の1つのレベルが取り除かれます）。
+
 ```nim
 proc p(a: typedesc; b: a) = discard
 
@@ -3857,6 +4044,7 @@ p(int, 4)
 
 ### 一般的な推論の制限(Generic inference restrictions)
 タイプ`var T`および`typedesc [T]`は、一般的なインスタンス化では推測できません。以下は許可されていません。
+
 ```nim
 proc g[T](f: proc(x: T); x: T) =
   f(x)
@@ -3886,6 +4074,7 @@ g[var int](v, i)
 
 オープンシンボルは、2つの異なるコンテキストで検索されます。
 定義時のコンテキストとインスタンス化時のコンテキストの両方が考慮されます。
+
 ```nim
 type
   Index = distinct int
@@ -3904,6 +4093,7 @@ echo a == b # works!
 
 ### Mixin statement
 mixin宣言により、シンボルを強制的に開くことができます。
+
 ```nim
 proc create*[T](): ref T =
   # there is no overloaded 'init' here, so we need to state that it's an
@@ -3918,6 +4108,7 @@ proc create*[T](): ref T =
 ### Bind statement
 `bind`ステートメントは、`mixin`ステートメントに対応しています。
 それは、早期にバインドされるべき識別子を明示的に宣言するために使用できます（つまり、識別子はテンプレート/ジェネリック定義のスコープ内で検索されるべきです）。
+
 ```nim
 # Module A
 var
@@ -3928,6 +4119,7 @@ template genId*: untyped =
   inc(lastId)
   lastId
 ```
+
 ```nim
 # Module B
 import A
