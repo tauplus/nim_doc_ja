@@ -3635,16 +3635,329 @@ proc p(what: bool) =
 コンパイラは、`IOError`が発生する可能性があるというヒントメッセージを生成します。
 `OSError`は、エフェクトプラグマが表示されるブランチで発生できないため、リストされていません。
 
+## ジェネリック(Generics)
+ジェネリックproc,イテレーター,型を型パラメータによってパラメータ化するNimの手法です。
+コンテキストに応じて、型パラメーターを導入するかジェネリックproc,イテレーター,型をインスタンス化するために角カッコ`[]`が使用されます。
 
+次の例はジェネリック2分木がモデル化できることを示しています。
+```nim
+type
+  BinaryTree*[T] = ref object # BinaryTree is a generic type with
+                              # generic param ``T``
+    le, ri: BinaryTree[T]     # left and right subtrees; may be nil
+    data: T                   # the data stored in a node
+
+proc newNode*[T](data: T): BinaryTree[T] =
+  # constructor for a node
+  result = BinaryTree[T](le: nil, ri: nil, data: data)
+
+proc add*[T](root: var BinaryTree[T], n: BinaryTree[T]) =
+  # insert a node into the tree
+  if root == nil:
+    root = n
+  else:
+    var it = root
+    while it != nil:
+      # compare the data items; uses the generic ``cmp`` proc
+      # that works for any type that has a ``==`` and ``<`` operator
+      var c = cmp(it.data, n.data)
+      if c < 0:
+        if it.le == nil:
+          it.le = n
+          return
+        it = it.le
+      else:
+        if it.ri == nil:
+          it.ri = n
+          return
+        it = it.ri
+
+proc add*[T](root: var BinaryTree[T], data: T) =
+  # convenience proc:
+  add(root, newNode(data))
+
+iterator preorder*[T](root: BinaryTree[T]): T =
+  # Preorder traversal of a binary tree.
+  # Since recursive iterators are not yet implemented,
+  # this uses an explicit stack (which is more efficient anyway):
+  var stack: seq[BinaryTree[T]] = @[root]
+  while stack.len > 0:
+    var n = stack.pop()
+    while n != nil:
+      yield n.data
+      add(stack, n.ri)  # push right subtree onto the stack
+      n = n.le          # and follow the left pointer
+
+var
+  root: BinaryTree[string] # instantiate a BinaryTree with ``string``
+add(root, newNode("hello")) # instantiates ``newNode`` and ``add``
+add(root, "world")          # instantiates the second ``add`` proc
+for str in preorder(root):
+  stdout.writeLine(str)
+```
+
+`T`は、ジェネリック型パラメーターまたは型変数と呼ばれます。
+
+### Is operator
+`is`演算子は、型の等価性をチェックするためにセマンティック解析中に評価されます。
+したがって、ジェネリックコード内の型の特化に非常に役立ちます。
+```nim
+type
+  Table[Key, Value] = object
+    keys: seq[Key]
+    values: seq[Value]
+    when not (Key is string): # empty value for strings used for optimization
+      deletedKeys: seq[bool]
+```
+
+### 型クラス(Type Classes)
+型クラスは、オーバーロード解決または`is`演算子のコンテキストで型と照合するために使用できる特別な擬似型です。
+Nimは次の組み込み型クラスをサポートしています。
+
+|型クラス|マッチ|
+|:---|:---|
+|`object`|any object type|
+|`tuple`|any tuple type|
+|`enum`|any enumeration|
+|`proc`|any proc type|
+|`ref`|any `ref` type|
+|`ptr`|any `ptr` type|
+|`var`|any `var` type|
+|`distinct`|any distinct type|
+|`array`|any array type|
+|`set`|any set type|
+|`seq`|any seq type|
+|`auto`|any type|
+|`any`|distinct auto (see below)|
+
+さらに、すべてのジェネリック型は、ジェネリック型のインスタンス化と一致する同じ名前の型クラスを自動的に作成します。
+
+標準のブール演算子を使用して型クラスを組み合わせて、より複雑な型クラスを作成できます。
+```nim
+# create a type class that will match all tuple and object types
+type RecordType = tuple or object
+
+proc printFields[T: RecordType](rec: T) =
+  for key, value in fieldPairs(rec):
+    echo key, " = ", value
+```
+
+型クラスの構文はMLに似た言語のADT/代数データ型の構文に似ているように見えますが、型クラスは型のインスタンス化で適用される静的な制約であることを理解する必要があります。
+型クラスは実際にはそれらの型ではなく、最終的に何らかの特異な型に解決される一般的な「チェック」を提供するシステムです。
+型のクラスでは、オブジェクトのバリアントやメソッドとは異なり、実行時の型のダイナミズムは許可されません。
+
+例として、次はコ​​ンパイルされません。
+```nim
+type TypeClass = int | string
+var foo: TypeClass = 2 # foo's type is resolved to an int here
+foo = "this will fail" # error here, because foo is an int
+```
+
+Nimでは、ジェネリック型パラメーターの型制約として型クラスと通常の型を指定できます。
+```nim
+proc onlyIntOrString[T: int|string](x, y: T) = discard
+
+onlyIntOrString(450, 616) # valid
+onlyIntOrString(5.0, 0.0) # type mismatch
+onlyIntOrString("xy", 50) # invalid as 'T' cannot be both at the same time
+```
+
+### 暗黙のジェネリック(Implicit generics)
+型クラスは、パラメータの型として直接使用できます。
+```nim
+# create a type class that will match all tuple and object types
+type RecordType = tuple or object
+
+proc printFields(rec: RecordType) =
+  for key, value in fieldPairs(rec):
+    echo key, " = ", value
+```
+
+このような方法で型クラスを利用するプロシージャは、暗黙的にジェネリックであると見なされます。
+これらは、プログラム内で使用されるparam型の一意の組み合わせごとに1回インスタンス化されます。
+
+デフォルトでは、オーバーロードの解決中に、各名前付き型クラスは厳密に1つの具象型にバインドされます。
+このような型クラスをバインド型と呼びます。これを説明するために、システムモジュールから直接取得した例を次に示します。
+```nim
+proc `==`*(x, y: tuple): bool =
+  ## requires `x` and `y` to be of the same tuple type
+  ## generic ``==`` operator for tuples that is lifted from the components
+  ## of `x` and `y`.
+  result = true
+  for a, b in fields(x, y):
+    if a != b: result = false
+```
+
+あるいは、`distict`型修飾子を型クラスに適用して、型クラスに一致する各パラメーターが異なる型にバインドできるようにすることができます。
+このような型クラスは、多くの型のバインドと呼ばれます。
+
+暗黙的なジェネリックスタイルで記述されたProcは、多くの場合、一致したジェネリック型の型パラメーターを参照する必要があります。
+これらは、ドット構文を使用して簡単にアクセスできます。
+```nim
+type Matrix[T, Rows, Columns] = object
+  ...
+
+proc `[]`(m: Matrix, row, col: int): Matrix.T =
+  m.data[col * high(Matrix.Columns) + row]
+```
+
+暗黙のジェネリックを示す他の例は次のとおりです。
+```nim
+proc p(t: Table; k: Table.Key): Table.Value
+
+# is roughly the same as:
+
+proc p[Key, Value](t: Table[Key, Value]; k: Key): Value
+```
+```nim
+proc p(a: Table, b: Table)
+
+# is roughly the same as:
+
+proc p[Key, Value](a, b: Table[Key, Value])
+```
+```nim
+proc p(a: Table, b: distinct Table)
+
+# is roughly the same as:
+
+proc p[Key, Value, KeyB, ValueB](a: Table[Key, Value], b: Table[KeyB, ValueB])
+```
+
+パラメータタイプとして使用される `typedesc`は、暗黙的なジェネリックも導入します。`typedesc`には独自のルールセットがあります。
+```nim
+proc p(a: typedesc)
+
+# is roughly the same as:
+
+proc p[T](a: typedesc[T])
+```
+
+typedescは「bind many」型クラスです。
+```nim
+proc p(a, b: typedesc)
+
+# is roughly the same as:
+
+proc p[T, T2](a: typedesc[T], b: typedesc[T2])
+```
+
+タイプ`typedesc`のパラメーター自体は、型として使用できます。
+型として使用される場合は、基になる型です。（つまり、「typedesc」の1つのレベルが取り除かれます）。
+```nim
+proc p(a: typedesc; b: a) = discard
+
+# is roughly the same as:
+proc p[T](a: typedesc[T]; b: T) = discard
+
+# hence this is a valid call:
+p(int, 4)
+# as parameter 'a' requires a type, but 'b' requires a value.
+```
+
+### 一般的な推論の制限(Generic inference restrictions)
+タイプ`var T`および`typedesc [T]`は、一般的なインスタンス化では推測できません。以下は許可されていません。
+```nim
+proc g[T](f: proc(x: T); x: T) =
+  f(x)
+
+proc c(y: int) = echo y
+proc v(y: var int) =
+  y += 100
+var i: int
+
+# allowed: infers 'T' to be of type 'int'
+g(c, 42)
+
+# not valid: 'T' is not inferred to be of type 'var int'
+g(v, i)
+
+# also not allowed: explict instantiation via 'var int'
+g[var int](v, i)
+```
+
+### ジェネリックでのシンボル検索(Symbol lookup in generics)
+
+#### オープンシンボルとクローズシンボル(Open and Closed symbols)
+ジェネリックのシンボルバインディングルールはわずかに微妙です。
+「オープン」および「クローズ」シンボルがあります。
+「閉じた」シンボルはインスタンス化コンテキストで再バインドできませんが、「開いた」シンボルは再バインドできます。
+デフォルトでは、オーバーロードされたシンボルは開いており、他のすべてのシンボルは閉じています。
+
+オープンシンボルは、2つの異なるコンテキストで検索されます。
+定義時のコンテキストとインスタンス化時のコンテキストの両方が考慮されます。
+```nim
+type
+  Index = distinct int
+
+proc `==` (a, b: Index): bool {.borrow.}
+
+var a = (0, 0.Index)
+var b = (0, 0.Index)
+
+echo a == b # works!
+```
+
+例では、タプルのジェネリック`==`（システムモジュールで定義されている）は、タプルのコンポーネントの`==`演算子を使用します。
+ただし、インデックス型の`==`はタプルの`==`の後に定義されます。
+ただし、インスタンス化では現在定義されているシンボルも考慮されるため、例はコンパイルされます。
+
+### Mixin statement
+mixin宣言により、シンボルを強制的に開くことができます。
+```nim
+proc create*[T](): ref T =
+  # there is no overloaded 'init' here, so we need to state that it's an
+  # open symbol explicitly:
+  mixin init
+  new result
+  init result
+```
+
+`mixin`ステートメントは、テンプレートとジェネリックでのみ意味があります。
+
+### Bind statement
+`bind`ステートメントは、`mixin`ステートメントに対応しています。
+それは、早期にバインドされるべき識別子を明示的に宣言するために使用できます（つまり、識別子はテンプレート/ジェネリック定義のスコープ内で検索されるべきです）。
+```nim
+# Module A
+var
+  lastId = 0
+
+template genId*: untyped =
+  bind lastId
+  inc(lastId)
+  lastId
+```
+```nim
+# Module B
+import A
+
+echo genId()
+```
+
+ただし、`bind`は定義スコープからのシンボルバインドがデフォルトであるため、ほとんど役に立ちません。
+
+`bind`ステートメントは、テンプレートとジェネリックでのみ意味があります。
 
 ## テンプレート(Templates)
 
 ### メソッド呼び出し構文の制限(Limitations of the method call syntax)
 
+## マクロ(Macros)
+
+## 特別な型(Special Types)
+
+## モジュール(Modules)
+
+## コンパイラメッセージ(Compiler Messages)
+
 ## プラグマ(Pragmas)
 
+## 実装固有のプラグマ(Implementation Specific Pragmas)
 
 ### ビットサイズプラグマ(Bitsize pragma)
 
+## 外部関数インターフェース(Foreign function interface)
 
+## スレッド(Threads)
 
