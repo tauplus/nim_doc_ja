@@ -2271,7 +2271,7 @@ sayHello(3) # 3
 
 ### untypedの遅延型解決
 注：未解決の式とは、シンボルの検索や型チェックが実行されていない式です。
-`immediate `として宣言されていないテンプレートとマクロはオーバーロードに関与するため、未解決の式をテンプレートまたはマクロに渡す方法が不可欠です。
+`immediate `として宣言されていないテンプレートとマクロはオーバーロード解決に関与するため、未解決の式をテンプレートまたはマクロに渡す方法が不可欠です。
 これは、`untyped`メタタイプが達成することです。
 
 ```nim
@@ -4136,7 +4136,306 @@ echo genId()
 
 ## テンプレート(Templates)
 
+テンプレートは、マクロの単純な形式です。
+これは、Nimの抽象構文ツリーで動作する単純な置換メカニズムです。コンパイラのセマンティックパスで処理されます。
+
+テンプレートを呼び出す構文は、プロシージャを呼び出すのと同じです。
+
+例：
+
+```nim
+template `!=` (a, b: untyped): untyped =
+  # this definition exists in the System module
+  not (a == b)
+
+assert(5 != 6) # the compiler rewrites that to: assert(not (5 == 6))
+```
+
+`!=`, `>`, `>=`, `in`, `notin`, `isnot`演算子は実際にはテンプレートです。
+
+`a > b`は`b < a`に変換され、`a in b`は`contains(b, a)`に変換されます。
+`notin`と`isnot`には明らかな意味があります。
+
+テンプレートの「型」には`untyped`,`typed`,`typedesc`シンボルがあります。
+これらは「メタタイプ」であり、特定のコンテキストでのみ使用できます。
+通常の型も使用できます。これは、`typed`式が期待されることを意味します。
+
+### typedパラメータとuntypedパラメータ
+
+`untyped`パラメータは式がテンプレートに渡される前に、シンボル検索と型解決が実行されないことを意味します。
+これは、たとえば、宣言されていない識別子をテンプレートに渡すことができることを意味します。
+
+```nim
+template declareInt(x: untyped) =
+  var x: int
+
+declareInt(x) # valid
+x = 3
+```
+
+```nim
+template declareInt(x: typed) =
+  var x: int
+
+declareInt(x) # invalid, because x has not been declared and so has no type
+```
+
+すべてのパラメーターが`untyped`なテンプレートは、即時テンプレートと呼ばれます。
+歴史的な理由により、テンプレートには`immediate`プラグマで明示的に注釈を付けることができますが、これらのテンプレートはオーバーロード解決に関与せず、パラメーターの型はコンパイラーによって無視されます。
+明示的なimmediateテンプレートは非推奨になりました。
+
+注：歴史的な理由により、`stmt`は`typed`のエイリアスであり、`expr`は`untyped`のエイリアスでしたが、削除されました。
+
+### コードブロックをテンプレートに渡す(Passing a code block to a template)
+ステートメントのブロックを、特別な`:`構文に従って最後の引数としてテンプレートに渡すことができます。
+
+```nim
+template withFile(f, fn, mode, actions: untyped): untyped =
+  var f: File
+  if open(f, fn, mode):
+    try:
+      actions
+    finally:
+      close(f)
+  else:
+    quit("cannot open: " & fn)
+
+withFile(txt, "ttempl3.txt", fmWrite):  # special colon
+  txt.writeLine("line 1")
+  txt.writeLine("line 2")
+```
+
+この例では、2つの`writeLine`ステートメントが`actions`パラメーターにバインドされています。
+
+通常、コードのブロックをテンプレートに渡すには、ブロックを受け入れるパラメーターの型が`untyped`である必要があります。
+シンボル検索はテンプレートのインスタンス化される時まで遅延されるためです。
+
+```nim
+template t(body: typed) =
+  block:
+    body
+
+t:
+  var i = 1
+  echo i
+
+t:
+  var i = 2  # fails with 'attempt to redeclare i'
+  echo i
+```
+
+上記のコードは、`i`が既に宣言されているという謎のエラーメッセージで失敗します。
+これは`var i = ...`が`body`パラメータに渡される前に（bodyがtypedであるため）型チェックされる必要があり、Nimでの型チェックがシンボル検索を意味するためです。
+シンボルの検索を成功させるには、現在の（つまり外側の）スコープに`i`を追加する必要があります。
+型チェックの後、これらのシンボルテーブルへの追加はロールバックされません（良かれ悪しかれ）。
+同じコードでも`untyped`であれば、テンプレートに渡されるbodyは型チェックされないため機能します。
+
+```nim
+template t(body: untyped) =
+  block:
+    body
+
+t:
+  var i = 1
+  echo i
+
+t:
+  var i = 2  # compiles
+  echo i
+```
+
+### untypedの可変長引数(Varargs of untyped)
+型チェックをを防ぐ`untyped`メタ型に加えて、`varargs[untyped]`もあり、パラメータの数さえ固定されません。
+
+```nim
+template hideIdentifiers(x: varargs[untyped]) = discard
+
+hideIdentifiers(undeclared1, undeclared2)
+```
+
+ただし、テンプレートは可変引数を反復処理できないため、この機能は一般的にマクロに非常に役立ちます。
+
+### テンプレートでのシンボルバインディング(Symbol binding in templates)
+テンプレートは衛生的なマクロなので、新しいスコープを開きます。
+ほとんどのシンボルは、テンプレートを定義したスコープからバインドされます。
+
+```nim
+# Module A
+var
+  lastId = 0
+
+template genId*: untyped =
+  inc(lastId)
+  lastId
+```
+
+```nim
+# Module B
+import A
+
+echo genId() # Works as 'lastId' has been bound in 'genId's defining scope
+```
+
+ジェネリックのように、シンボルのバインドは、`mixin`または`bind`ステートメントを介して影響を受ける可能性があります。
+
+### 識別子の構築(Identifier construction)
+テンプレートでは、バッククォート`表記を使用して識別子を作成できます。
+
+```nim
+template typedef(name: untyped, typ: typedesc) =
+  type
+    `T name`* {.inject.} = typ
+    `P name`* {.inject.} = ref `T name`
+
+typedef(myint, int)
+var x: PMyInt
+```
+
+この例では、`name`は`myint`でインスタンス化されるため、`T name`は`Tmyint`になります。
+
+### テンプレートパラメータのルックアップルール(Lookup rules for template parameters)
+
+テンプレート内のパラメーター`p`は式`x.p`でも置換されます。
+したがって、テンプレート引数をフィールド名として使用でき、完全修飾されている場合でもグローバルシンボルを同じ引数名でシャドウできます。
+
+```nim
+# module 'm'
+
+type
+  Lev = enum
+    levA, levB
+
+var abclev = levB
+
+template tstLev(abclev: Lev) =
+  echo abclev, " ", m.abclev
+
+tstLev(levA)
+# produces: 'levA levA'
+```
+
+しかし、グローバルシンボルは`bind`ステートメントによって適切にキャプチャできます。
+
+```nim
+# module 'm'
+
+type
+  Lev = enum
+    levA, levB
+
+var abclev = levB
+
+template tstLev(abclev: Lev) =
+  bind m.abclev
+  echo abclev, " ", m.abclev
+
+tstLev(levA)
+# produces: 'levA levB'
+```
+
+### テンプレートの衛生(Hygiene in templates)
+デフォルトのテンプレートは衛生的です。
+テンプレートで宣言されたローカル識別子は、インスタンス化コンテキストではアクセスできません。
+
+```nim
+template newException*(exceptn: typedesc, message: string): untyped =
+  var
+    e: ref exceptn  # e is implicitly gensym'ed here
+  new(e)
+  e.msg = message
+  e
+
+# so this works:
+let e = "message"
+raise newException(IoError, e)
+```
+
+テンプレートで宣言されたシンボルがインスタンス化スコープに公開されるかどうかは、injectおよびgensymプラグマによって制御されます。
+gensymされたシンボルは公開されませんが、injectされます。
+
+`type`,`var`,`let`,`const`の実体シンボルのデフォルトは`gensym`であり、`proc`,`iterator`,`converter`,`template`,`macro`は`inject`です。
+ただし、実体の名前がテンプレートパラメータとして渡される場合、それはinjectされたシンボルです。
+
+```nim
+template withFile(f, fn, mode: untyped, actions: untyped): untyped =
+  block:
+    var f: File  # since 'f' is a template param, it's injected implicitly
+    ...
+
+withFile(txt, "ttempl3.txt", fmWrite):
+  txt.writeLine("line 1")
+  txt.writeLine("line 2")
+```
+
+`inject`と`gensym`プラグマはsecond class注釈です。
+テンプレート定義以外のセマンティクスはないため、抽象化できません。
+
+```nim
+{.pragma myInject: inject.}
+
+template t() =
+  var x {.myInject.}: int # does NOT work
+```
+
+テンプレートの衛生をなくすには、テンプレートに`dirty`プラグマを使用できます。`inject`と`gensym`は、`dirty`テンプレートでは効果がありません。
+
+`gensym`化シンボルは`x.field`構文の`field`として使用できません。
+また、`ObjectConstruction(field: value)`および`namedParameterCall(field = value)`構文構造体でも使用できません。
+
+その理由は、次のようなコードです。
+
+```nim
+type
+  T = object
+    f: int
+
+template tmp(x: T) =
+  let f = 34
+  echo x.f, T(f: 4)
+```
+
+これは期待どおりに動作するはずです。
+
+ただし、これはメソッド呼び出し構文が`gensym`化シンボルに対して使用できないことを意味します。
+
+```nim
+template tmp(x) =
+  type
+    T {.gensym.} = int
+  
+  echo x.T # invalid: instead use:  'echo T(x)'.
+
+tmp(12)
+```
+
+注：バージョン1より前のNimコンパイラーは、この要件に関してより寛大でした。
+移行期間には`--useVersion:0.19`スイッチを使用します。
+
 ### メソッド呼び出し構文の制限(Limitations of the method call syntax)
+`x.f`の式`x`は`f(x)`書き換える必要があると判断する前に、セマンティックをチェックする必要があります（つまり、シンボル検索と型チェック）。
+したがって、ドット構文には、テンプレート/マクロの呼び出しに使用する場合、いくつかの制限があります。
+
+```nim
+template declareVar(name: untyped) =
+  const name {.inject.} = 45
+
+# Doesn't compile:
+unknownIdentifier.declareVar
+```
+
+別の一般的な例は次のとおりです。
+
+```nim
+from sequtils import toSeq
+
+iterator something: string =
+  yield "Hello"
+  yield "World"
+
+var info = something().toSeq
+```
+
+ここでの問題は、`toSeq`がシーケンスに変換する機会を得る前に、このコンテキストではiteratorとしての`something()`がこのコンテキストで呼び出し可能でないことをコンパイラが既に決定していることです。
 
 ## マクロ(Macros)
 
