@@ -4438,20 +4438,28 @@ var info = something().toSeq
 ここでの問題は、`toSeq`がシーケンスに変換する機会を得る前に、このコンテキストではiteratorとしての`something()`がこのコンテキストで呼び出し可能でないことをコンパイラが既に決定していることです。
 
 ## マクロ(Macros)
+翻訳中
 
 ## 特別な型(Special Types)
+翻訳中
 
 ## モジュール(Modules)
+翻訳中
 
 ## コンパイラメッセージ(Compiler Messages)
+翻訳中
 
 ## プラグマ(Pragmas)
+翻訳中
 
 ## 実装固有のプラグマ(Implementation Specific Pragmas)
+翻訳中
 
 ### ビットサイズプラグマ(Bitsize pragma)
 
 ## 外部関数インターフェース(Foreign function interface)
+翻訳中
 
 ## スレッド(Threads)
+翻訳中
 
