@@ -4438,7 +4438,205 @@ var info = something().toSeq
 ここでの問題は、`toSeq`がシーケンスに変換する機会を得る前に、このコンテキストではiteratorとしての`something()`がこのコンテキストで呼び出し可能でないことをコンパイラが既に決定していることです。
 
 ## マクロ(Macros)
-翻訳中
+マクロは、コンパイル時に実行される特別な関数です。
+通常、マクロの入力は、渡されるコードの抽象構文木（AST）です。
+その後、マクロはそれに対して変換を行い、変換されたASTを返すことができます。
+これを使用して、カスタム言語機能を追加し、ドメイン固有の言語を実装できます。
+
+マクロ呼び出しでは、セマンティック解析が完全に上から下、左から右に進みません。
+代わりに、セマンティック解析は少なくとも2回行われます。
+
+- セマンティック解析は、マクロ呼び出しを認識して解決します。
+- コンパイラーはマクロ本体を実行します（他のprocを呼び出す場合があります）。
+- マクロ呼び出しのASTを、マクロによって返されたASTに置き換えます。
+- コードのその領域のセマンティック解析を繰り返します。
+- マクロによって返されたASTに他のマクロ呼び出しが含まれている場合、このプロセスが繰り返されます。
+
+マクロは高度なコンパイル時コード変換を可能にしますが、Nimの構文を変更することはできません。
+ただし、Nimの構文はいずれにせよ十分な柔軟性があるため、これは実際の制限ではありません。
+
+### デバッグ例(Debug Example)
+次の例は、可変数の引数を受け入れる強力な`debug`コマンドを実装しています。
+
+```nim
+# Nim構文ツリーを使用するには、`` macros``モジュールで定義されているAPIが必要です。
+import macros
+
+macro debug(args: varargs[untyped]): untyped =
+  # `args`は、マクロの引数に対するASTをそれぞれ含む` NimNode`値のコレクションです。
+  # マクロは常に `NimNode`を返さなければなりません。
+  # 種類が `nnkStmtList`のノードは、このユースケースに適しています。
+  result = nnkStmtList.newTree()
+  # このマクロに渡される引数を繰り返し処理します:
+  for n in args:
+    # 式を書き込む呼び出しをステートメントリストに追加します;
+    # `toStrLit`はASTをその文字列表現に変換します:
+    result.add newCall("write", newIdentNode("stdout"), newLit(n.repr))
+    # ": "を記述する呼び出しをステートメントリストに追加します:
+    result.add newCall("write", newIdentNode("stdout"), newLit(": "))
+    # 式の値を書き込む呼び出しをステートメントリストに追加します:
+    result.add newCall("writeLine", newIdentNode("stdout"), n)
+
+var
+  a: array[0..10, int]
+  x = "some string"
+a[0] = 42
+a[1] = 45
+
+debug(a[0], a[1], x)
+```
+
+このマクロ呼び出しは次のように展開されます。
+
+
+```nim
+write(stdout, "a[0]")
+write(stdout, ": ")
+writeLine(stdout, a[0])
+
+write(stdout, "a[1]")
+write(stdout, ": ")
+writeLine(stdout, a[1])
+
+write(stdout, "x")
+write(stdout, ": ")
+writeLine(stdout, x)
+```
+
+`varargs`パラメーターに渡される引数は、配列コンストラクター式にラップされます。
+これが、`debug`がすべての`n`の子に対して繰り返される理由です。
+
+### BindSym
+上記の`debug`マクロは、`write`,`writeLine`および`stdout`がシステムモジュールで宣言されているという事実に依存しているため、インスタンス化コンテキストで表示されます。
+バインドされていない識別子を使用する代わりに、バインドされた識別子（別名、シンボル）を使用する方法があります。そのために、`bindSym`ビルトインを使用できます。
+
+```nim
+import macros
+
+macro debug(n: varargs[typed]): untyped =
+  result = newNimNode(nnkStmtList, n)
+  for x in n:
+    # we can bind symbols in scope via 'bindSym':
+    add(result, newCall(bindSym"write", bindSym"stdout", toStrLit(x)))
+    add(result, newCall(bindSym"write", bindSym"stdout", newStrLitNode(": ")))
+    add(result, newCall(bindSym"writeLine", bindSym"stdout", x))
+
+var
+  a: array[0..10, int]
+  x = "some string"
+a[0] = 42
+a[1] = 45
+
+debug(a[0], a[1], x)
+```
+
+このマクロ呼び出しは次のように展開されます。
+
+```nim
+write(stdout, "a[0]")
+write(stdout, ": ")
+writeLine(stdout, a[0])
+
+write(stdout, "a[1]")
+write(stdout, ": ")
+writeLine(stdout, a[1])
+
+write(stdout, "x")
+write(stdout, ": ")
+writeLine(stdout, x)
+```
+
+ただし、シンボル`write`,`writeLine`および`stdout`は既にバインドされており、再度検索されません。
+例が示すように、`bindSym`はオーバーロードされたシンボルを暗黙的に処理します。
+
+### Case-Ofマクロ(Case-Of Macro)
+Nimでは、すべてのブランチがマクロ実装に渡されて処理されるという違いがあるだけで、case-of式の構文を持つマクロを持つことができます。
+その後、マクロの実装により、分岐を有効なNimステートメントに変換します。
+次の例は、この機能を字句アナライザに使用する方法を示しています。
+
+```nim
+import macros
+
+macro case_token(args: varargs[untyped]): untyped =
+  echo args.treeRepr
+  # creates a lexical analyzer from regular expressions
+  # ... (implementation is an exercise for the reader ;-)
+  discard
+
+case_token: # this colon tells the parser it is a macro statement
+of r"[A-Za-z_]+[A-Za-z_0-9]*":
+  return tkIdentifier
+of r"0-9+":
+  return tkInteger
+of r"[\+\-\*\?]+":
+  return tkOperator
+else:
+  return tkUnknown
+```
+
+スタイルに関する注意：コードを読みやすくするために、要求を満たす中で最も強力でないプログラミングテクニックを使用することをお勧めします。
+したがって、「チェックリスト」は次のとおりです。
+
+- 可能であれば、通常のproc/iteratorを使用します
+- Else：可能であれば、ジェネリックproc/iteratorを使用します
+- Else：可能であれば、テンプレートを使用します。
+- Else：マクロを使用します。
+
+### プラグマとしてのマクロ(Macros as pragmas)
+ルーチン全体（プロシージャ、イテレータなど）を、プラグマ表記を介してテンプレートまたはマクロに渡すこともできます。
+
+```nim
+template m(s: untyped) = discard
+
+proc p() {.m.} = discard
+```
+
+これは、次の単純な構文変換です。
+
+```nim
+template m(s: untyped) = discard
+
+m:
+  proc p() = discard
+```
+
+### Forループマクロ(For Loop Macro)
+特別な型`system.ForLoopStmt`の式を唯一の入力パラメーターとして使用するマクロは、`for`ループ全体を書き換えることができます。
+
+```nim
+import macros
+{.experimental: "forLoopMacros".}
+
+macro enumerate(x: ForLoopStmt): untyped =
+  expectKind x, nnkForStmt
+  # 最初のforループ変数を取り除き、整数カウンターとして使用します:
+  result = newStmtList()
+  result.add newVarStmt(x[0], newLit(0))
+  var body = x[^1]
+  if body.kind != nnkStmtList:
+    body = newTree(nnkStmtList, body)
+  body.add newCall(bindSym"inc", x[0])
+  var newFor = newTree(nnkForStmt)
+  for i in 1..x.len-3:
+    newFor.add x[i]
+  # enumerate(X)を 'X'に変換します
+  newFor.add x[^2][1]
+  newFor.add body
+  result.add newFor
+  # マクロ全体をブロックでラップして、新しいスコープを作成します
+  result = quote do:
+    block: `result`
+
+for a, b in enumerate(items([1, 2, 3])):
+  echo a, " ", b
+
+# マクロをブロックにラップせずに、再定義エラーを避けるために、
+# ここで「a」と「b」に異なる名前を選択する必要があります
+for a, b in enumerate([1, 2, 3, 5]):
+  echo a, " ", b
+```
+
+現在、forループマクロは`{.experimental: "forLoopMacros".}`を使用して明示的に有効にする必要があります。
 
 ## 特別な型(Special Types)
 翻訳中
