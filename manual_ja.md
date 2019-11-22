@@ -1,7 +1,7 @@
 # Nimマニュアル
-原著：Andreas Rumpf, Zahary Karadjov  
-原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)  
-Version：1.02  
+原著：Andreas Rumpf, Zahary Karadjov
+原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)
+Version：1.02
 
 ## このドキュメントについて
 注：このドキュメントはドラフトです！Nimの機能のいくつかには、より正確な表現が必要な場合があります。このマニュアルは常に適切な仕様に進化しています。 
@@ -94,6 +94,7 @@ except IndexError:
 このドキュメントの後半で、マクロの呼び出しではこのインターリーブが必要になるだけでなく、セマンティック解析が完全に上から下、左から右に進まない状況が生じることもわかります。
 
 ## 字句解析(Lexical Analysis)
+
 ### エンコーディング(Encoding)
 すべてのNimソースファイルはUTF-8エンコーディング（またはそのASCIIサブセット）です。
 他のエンコードはサポートされていません。
