@@ -4650,6 +4650,34 @@ Nimコンパイラーは、ヒント、警告、エラーメッセージなど�
 ## プラグマ(Pragmas)
 翻訳中
 
+### deprecated pragma
+### noSideEffect pragma
+### compileTime pragma
+### noReturn pragma
+### acyclic pragma
+### final pragma
+### shallow pragma
+### pure pragma
+### asmNoStackFrame pragma
+### error pragma
+### fatal pragma
+### warning pragma
+### hint pragma
+### line pragma
+### linearScanEnd pragma
+### computedGoto pragma
+### unroll pragma
+### immediate pragma
+### compilation option pragmas
+### push and pop pragmas
+### register pragma
+### global pragma
+### pragma pragma
+### Disabling certain messages
+### used pragma
+### experimental pragma
+
+
 ## 実装固有のプラグマ(Implementation Specific Pragmas)
 翻訳中
 
