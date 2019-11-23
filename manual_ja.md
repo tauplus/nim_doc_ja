@@ -5288,7 +5288,26 @@ proc isHexNumber(s: string): bool =
 汎用プロシージャ内で使用される場合、プロシージャのインスタンス化ごとに個別の一意のグローバル変数が作成されます。
 モジュール内で作成されたグローバル変数の初期化の順序は定義されていませんが、それらはすべて、元のモジュールの最上位変数の後、それをインポートするモジュールの変数の前に初期化されます。
 
-### pragma pragma
+### pragmaプラグマ(pragma pragma)
+`pragma` プラグマは、ユーザー定義のプラグマを宣言するために使用できます。
+Nimのテンプレートとマクロはプラグマに影響しないため、これは便利です。
+ユーザー定義のプラグマは、他のすべてのシンボルとは異なるモジュール全体のスコープ内にあります。
+モジュールからインポートすることはできません。
+
+例：
+
+```nim
+when appType == "lib":
+  {.pragma: rtl, exportc, dynlib, cdecl.}
+else:
+  {.pragma: rtl, importc, dynlib: "client.dll", cdecl.}
+
+proc p*(a, b: int): int {.rtl.} =
+  result = a+b
+```
+
+この例では、ダイナミックライブラリからシンボルをインポートするか、ダイナミックライブラリ生成用にシンボルをエクスポートする、 `rtl` hという名前の新しいプラグマが導入されています。
+
 ### Disabling certain messages
 ### used pragma
 ### experimental pragma
