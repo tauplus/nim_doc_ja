@@ -5160,6 +5160,14 @@ doAssert nameToProc[2][1]() == "baz"
 翻訳中
 
 ## スレッド(Threads)
+スレッドサポートを有効にするには、コマンドラインスイッチ`--threads:on`を使用する必要があります。
+`system`モジュールには、いくつかのスレッドプリミティブが含まれています。
+低レベルのスレッドAPIについては、[threads](https://nim-lang.org/docs/threads.html)と[channels](https://nim-lang.org/docs/channels.html)モジュールを参照してください。
+また、高レベルの並列処理構造も利用できます。詳細については、[spawn](https://nim-lang.org/docs/manual_experimental.html#parallel-amp-spawn)を参照してください。
+
+Nimのスレッドのメモリモデルは、他の一般的なプログラミング言語(C, Pascal, Java)とはまったく異なります。
+各スレッドには独自の（ガベージコレクション）ヒープがあり、メモリの共有はグローバル変数に制限されます。
+これは、競合状態の防止に役立ちます。GCが他のスレッドを停止して参照を調べる必要がないため、GCの効率が大幅に向上します。
 
 ### スレッドプラグマ(Thread pragma)
 
