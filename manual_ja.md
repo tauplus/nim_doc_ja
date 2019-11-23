@@ -5064,10 +5064,10 @@ proc thing(x: bool) {.deprecated: "thongを代わりに使用してください"
 `var T` または `ref T` または `ptr T` のタイプを持つパラメーターがない場合、これは副作用がないことを意味します。
 コンパイラがこれを検証できない場合にprocまたはiteratorに副作用なしのマークを付与すると静的なエラーとなります。
 
-特別なセマンティックルールとして、組み込みの `debugEcho` は副作用がないように見せかけるため、
+特別なセマンティックルールとして、組み込みの [`debugEcho`](https://nim-lang.org/docs/system.html#debugEcho%2Cvarargs%5Btyped%2C%5D) は副作用がないように見せかけるため、
 `noSideEffect` としてマークされたルーチンのデバッグに使用できます。
 
-`func` は、副作用のないprocの構文です。
+`func` は、副作用のないprocの糖衣構文です。
 
 ```nim
 func `+` (x, y: int): int
