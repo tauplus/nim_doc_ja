@@ -5126,7 +5126,28 @@ template myassert*(cond: untyped, msg = "") =
 `line` プラグマをパラメーターとともに使用する場合、パラメーターは `tuple[filename: string, line: int]` である必要があります。
 パラメーターなしで使用する場合は、 `system.InstantiationInfo()` が使用されます。
 
-### linearScanEnd pragma
+### linearScanEndプラグマ(linearScanEnd pragma)
+`linearScanEnd` プラグマを使用して、Nimのcaseステートメントをコンパイルする方法をコンパイラーに指示できます。
+構文的には、ステートメントとして使用する必要があります。
+
+```nim
+case myInt
+of 0:
+  echo "most common case"
+of 1:
+  {.linearScanEnd.}
+  echo "second most common case"
+of 2: echo "unlikely: use branch table"
+else: echo "unlikely too: use branch table for ", myInt
+```
+
+この例では、ケース分岐0と1は他のケースよりもはるかに一般的です。
+したがって、生成されたアセンブラコードは、これらの値を最初にテストする必要があります。
+これにより、CPUの分岐予測が成功する可能性が高くなります（高価なCPUパイプラインストールを回避します）。
+他のケースは、O（1）オーバーヘッドのジャンプテーブルに入れられる可能性がありますが、パイプラインが停止する可能性が非常に高くなります。
+
+`linearScanEnd` プラグマは、線形スキャンでテストする必要がある最後の分岐に配置する必要があります。 case文全体の最後の分岐に配置すると、case文全体で線形スキャンが使用されます。
+
 ### computedGoto pragma
 ### unroll pragma
 ### immediate pragma
