@@ -5177,6 +5177,35 @@ Nimのスレッドのメモリモデルは、他の一般的なプログラミ�
 スレッドプロシージャは`createThread`または`spawn`に渡され、間接的に呼び出されます。したがって、`thread`プラグマは`procvar`を暗黙指定します。
 
 ### GCの安全性(GC safety)
+proc `p`が直接的または間接的（GC安全でないprocの呼び出しを介して）にGCされるメモリ（`string`, `seq`, `ref`またはクロージャー）を含むグローバル変数にアクセスしない場合、`p`をGC安全なプロシージャーと呼びます。
+
+gcsafe注釈を使用して、procをgcsafeとしてマークできます。
+それ以外の場合、このプロパティはコンパイラーによって推測されます。
+`noSideEffect`は`gcsafe`を意味することに注意してください。
+スレッドを作成する唯一の方法は、`spawn`または`createThread`を使用することです。
+
+呼び出されるprocは`var`パラメーターを使用してはならず、そのパラメーターのいずれにも`ref`型またはクロージャー型が含まれていてはなりません。
+これにより、ヒープ共有の制限がなくなります。
+
+Cからインポートされるルーチンは、常に`gcsafe`であると想定されます。
+GCセーフチェックを無効にするために、`--threadAnalysis:off`コマンドラインスイッチを使用できます。
+これは、古いコードから新しいスレッドモデルへの移植作業を容易にするための一時的な回避策です。
+
+コンパイラのgcsafety解析をオーバーライドするために、`{.gcsafe.} `プラグマブロックを使用できます。
+
+```nim
+var
+  someGlobal: string = "some string here"
+  perThread {.threadvar.}: string
+
+proc setPerThread() =
+  {.gcsafe.}:
+    deepCopy(perThread, someGlobal)
+```
+
+今後の方向性：
+
+- GCされる共有メモリが提供されるかもしれません。
 
 ### Threadvarプラグマ(Threadvar pragma)
 
