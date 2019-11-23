@@ -5211,7 +5211,29 @@ proc searchChar(s: string, c: char): int =
 `immediate` プラグマは廃止されました。
 [typedパラメータとuntypedパラメータ](#typedパラメータとuntypedパラメータ)を参照してください。
 
-### compilation option pragmas
+### コンパイルオプションプラグマ(compilation option pragmas)
+ここにリストされているプラ​​グマは、proc / method / converterのコード生成オプションをオーバーライドするために使用できます。
+
+| pragma | allowed values | description |
+| ------ | -------------- | ----------- |
+| checks | on\|off | すべてのランタイムチェックのコード生成をオンまたはオフにします。 |
+| boundChecks | on\|off | 配列バインドチェックのコード生成をオンまたはオフにします。 |
+| overflowChecks | on\|off | オーバーフローまたはアンダーフローチェックのコード生成をオンまたはオフにします。 |
+| nilChecks | on\|off | nilポインターチェックのコード生成をオンまたはオフにします。 |
+| assertions | on\|off | アサーションのコード生成をオンまたはオフにします。 |
+| warnings | on\|off | コンパイラの警告メッセージをオンまたはオフにします。 |
+| hints | on\|off | コンパイラのヒントメッセージをオンまたはオフにします。 |
+| optimization | none\|speed\|size | コードの速度またはサイズを最適化するか、最適化を無効にします。 |
+| patterns | on\|off | テンプレート/マクロの書き換え項をオンまたはオフにします。 |
+| callconv | cdecl\|... | 後続のすべてのプロシージャ（およびプロシージャタイプ）のデフォルトの呼び出し規約を指定します。 |
+
+例：
+
+```nim
+{.checks: off, optimization: speed.}
+# ランタイムチェックなしでコンパイルし、速度を最適化する
+```
+
 ### push and pop pragmas
 ### register pragma
 ### global pragma
