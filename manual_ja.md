@@ -4654,7 +4654,20 @@ Nimコンパイラーは、ヒント、警告、エラーメッセージなど�
 機能にアクセスするためのより適切な構文が利用可能になる前に、言語機能を試す最初
 の実装としてもよく使用されます。
 
-### deprecated pragma
+### 非推奨プラグマ(deprecated pragma)
+deprecatedプラグマはシンボルに非推奨としてのマークを付与します。
+
+```nim
+proc p() {.deprecated.}
+var x {.deprecated.}: char
+```
+
+このプラグマは、開発者に伝えるためにオプションの警告文字列を取り込むこともできます。
+
+```nim
+proc thing(x: bool) {.deprecated: "thongを代わりに使用してください".}
+```
+
 ### noSideEffect pragma
 ### compileTime pragma
 ### noReturn pragma
