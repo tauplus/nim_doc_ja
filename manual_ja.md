@@ -5207,7 +5207,10 @@ proc searchChar(s: string, c: char): int =
 
 注：現在、コンパイラはこのプラグマを認識しますが、無視します。
 
-### immediate pragma
+### 即時プラグマ(immediate pragma)
+`immediate` プラグマは廃止されました。
+[typedパラメータとuntypedパラメータ](#typedパラメータとuntypedパラメータ)を参照してください。
+
 ### compilation option pragmas
 ### push and pop pragmas
 ### register pragma
