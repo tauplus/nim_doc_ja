@@ -4691,7 +4691,47 @@ func f() =
     echo "test"
 ```
 
-### compileTime pragma
+### コンパイルタイムプラグマ(compileTime pragma)
+`compileTime` プラグマは、コンパイル時にのみ実行されるプロシージャまたは変数をマークするために使用されます。コードは生成されません。
+コンパイル時プロシージャは、マクロのヘルパーとして役立ちます。
+言語のバージョン0.12.0以降、パラメータータイプ内で `system.NimNode` を使用するプロシージャは、 `compileTime` で暗黙的に宣言されます。
+
+```nim
+proc astHelper(n: NimNode): NimNode =
+  result = n
+```
+
+上のコードは以下と同じです。
+
+```nim
+proc astHelper(n: NimNode): NimNode {.compileTime.} =
+  result = n
+```
+
+compileTime変数は実行時にも利用できます。
+これにより、コンパイル時には変数が満たされる特定のイディオム（lookup tablesなど）が
+簡素化されますが、実行時にはアクセスされます。
+
+```nim
+import macros
+
+var nameToProc {.compileTime.}: seq[(string, proc (): string {.nimcall.})]
+
+macro registerProc(p: untyped): untyped =
+  result = newTree(nnkStmtList, p)
+  
+  let procName = p[0]
+  let procNameAsStr = $p[0]
+  result.add quote do:
+    nameToProc.add((`procNameAsStr`, `procName`))
+
+proc foo: string {.registerProc.} = "foo"
+proc bar: string {.registerProc.} = "bar"
+proc baz: string {.registerProc.} = "baz"
+
+doAssert nameToProc[2][1]() == "baz"
+```
+
 ### noReturn pragma
 ### acyclic pragma
 ### final pragma
