@@ -5128,28 +5128,345 @@ doAssert nameToProc[2][1]() == "baz"
 ### 非循環プラグマ(acyclic pragma)
 `acyclic` プラグマは、型宣言に適用されます。非推奨であり、無視されます。
 
-### final pragma
-### shallow pragma
-### pure pragma
-### asmNoStackFrame pragma
-### error pragma
-### fatal pragma
-### warning pragma
-### hint pragma
-### line pragma
-### linearScanEnd pragma
-### computedGoto pragma
-### unroll pragma
-### immediate pragma
-### compilation option pragmas
-### push and pop pragmas
-### register pragma
-### global pragma
-### pragma pragma
-### Disabling certain messages
-### used pragma
-### experimental pragma
+### ファイナルプラグマ(final pragma)
+`final` のプラグマをオブジェクトタイプに使用して、継承できないことを指定できます。
+継承は、既存のオブジェクトから（ `object of SuperType` 構文を介して）継承するオブジェクト、または `inheritable` としてマークされているオブジェクトでのみ使用できます。
 
+### shallowプラグマ(shallow pragma)
+`shallow` プラグマは、型のセマンティクスに影響します。
+コンパイラーは、浅いコピー(shallow copy)の作成を許可します。
+これは重大な意味上の問題を引き起こし、メモリ安全性を破壊する可能性があります！
+ただし、Nimのセマンティクスではシーケンスと文字列の深いコピー(deep copy)が必要なため、割り当てを大幅に高速化できます。
+これは、特にシーケンスを使用してツリー構造を構築する場合、高コストになる可能性があります。
+
+```nim
+type
+  NodeKind = enum nkLeaf, nkInner
+  Node {.shallow.} = object
+    case kind: NodeKind
+    of nkLeaf:
+      strVal: string
+    of nkInner:
+      children: seq[Node]
+```
+
+### 純粋プラグマ(pure pragma)
+オブジェクト型は、実行時の型識別に使用される型フィールドが省略されるように、`pure` プラグマでマークできます。
+これは、他のコンパイル言語とのバイナリ互換性のために必要でした。
+
+列挙型は、`pure` としてマークできます。次に、そのフィールドにアクセスするには、常に列挙型名を省略しない完全な修飾が必要です。
+
+### アセンブリスタックフレームなしプラグマ(asmNoStackFrame pragma)
+procには、 `asmNoStackFrame` プラグマを使用して、procのスタックフレームを生成しないようコンパイラーに指示できます。
+また、`return result;` などのexitステートメントは生成されず、
+生成されたC関数は `__declspec(naked)`または `__attribute__((naked))` として宣言されます（使用されるCコンパイラに応じて）。
+
+注：このプラグマは、アセンブラーステートメントのみで構成されるプロシージャでのみ使用してください。
+
+### エラープラグマ(error pragma)
+`error` プラグマは、指定された内容のエラーメッセージをコンパイラに出力させるために使用されます。
+ただし、エラーが発生してもコンパイルは必ずしも中断しません。
+
+`error` プラグマは、シンボル（イテレータやプロシージャなど）に注釈を付けるためにも使用できます。
+シンボルを使用すると、静的エラーが発生します。
+これは、オーバーロードと型変換が原因で一部の操作が有効であることを除外するのに特に役立ちます。
+
+```nim
+## ポインターではなく、基になるint値が比較されることを確認します。
+proc `==`(x, y: ptr int): bool {.error.}
+```
+
+### 致命的なプラグマ(fatal pragma)
+`fatal` プラグマは、指定された内容のエラーメッセージをコンパイラに出力させるために使用されます。
+`error` プラグマとは対照的に、コンパイルはこのプラグマによって中止されることが保証されています。
+
+例：
+
+```nim
+when not defined(objc):
+  {.fatal: "このプログラムはobjcコマンドでコンパイルします！".}
+```
+
+### 警告プラグマ(warning pragma)
+`warning` プラグマは、指定された内容の警告メッセージをコンパイラーに出力させるために使用されます。
+警告の後にコンパイルが続行されます。
+
+### ヒントプラグマ(hint pragma)
+`hint` プラグマは、指定された内容のヒントメッセージをコンパイラに出力させるために使用されます。
+ヒントの後にコンパイルが続行されます。
+
+### 行プラグマ(line pragma)
+`line` プラグマは、スタックバックトレースで見られるように、注釈付きステートメントの行情報に影響を与えるために使用できます。
+
+```nim
+template myassert*(cond: untyped, msg = "") =
+  if not cond:
+    # 'raise'ステートメントのランタイム行情報を変更
+    {.line: instantiationInfo().}:
+      raise newException(EAssertionFailed, msg)
+```
+
+`line` プラグマをパラメーターとともに使用する場合、パラメーターは `tuple[filename: string, line: int]` である必要があります。
+パラメーターなしで使用する場合は、 `system.InstantiationInfo()` が使用されます。
+
+### linearScanEndプラグマ(linearScanEnd pragma)
+`linearScanEnd` プラグマを使用して、Nimのcaseステートメントをコンパイルする方法をコンパイラーに指示できます。
+構文的には、ステートメントとして使用する必要があります。
+
+```nim
+case myInt
+of 0:
+  echo "most common case"
+of 1:
+  {.linearScanEnd.}
+  echo "second most common case"
+of 2: echo "unlikely: use branch table"
+else: echo "unlikely too: use branch table for ", myInt
+```
+
+この例では、ケース分岐0と1は他のケースよりもはるかに一般的です。
+したがって、生成されたアセンブラコードは、これらの値を最初にテストする必要があります。
+これにより、CPUの分岐予測が成功する可能性が高くなります（高価なCPUパイプラインストールを回避します）。
+他のケースは、O（1）オーバーヘッドのジャンプテーブルに入れられる可能性がありますが、パイプラインが停止する可能性が非常に高くなります。
+
+`linearScanEnd` プラグマは、線形スキャンでテストする必要がある最後の分岐に配置する必要があります。 case文全体の最後の分岐に配置すると、case文全体で線形スキャンが使用されます。
+
+### computedGotoプラグマ(computedGoto pragma)
+`computedGoto` プラグマを使用して、 `while true` ステートメントでNimケースをコンパイルする方法をコンパイラーに指示できます。
+構文的には、ループ内のステートメントとして使用する必要があります。
+
+```nim
+type
+  MyEnum = enum
+    enumA, enumB, enumC, enumD, enumE
+
+proc vm() =
+  var instructions: array[0..100, MyEnum]
+  instructions[2] = enumC
+  instructions[3] = enumD
+  instructions[4] = enumA
+  instructions[5] = enumD
+  instructions[6] = enumC
+  instructions[7] = enumA
+  instructions[8] = enumB
+  
+  instructions[12] = enumE
+  var pc = 0
+  while true:
+    {.computedGoto.}
+    let instr = instructions[pc]
+    case instr
+    of enumA:
+      echo "yeah A"
+    of enumC, enumD:
+      echo "yeah CD"
+    of enumB:
+      echo "yeah B"
+    of enumE:
+      break
+    inc(pc)
+
+vm()
+```
+
+例が示すように、 `computedGoto` はインタープリターに最も役立ちます。
+基になるバックエンド（Cコンパイラ）が計算されたgoto拡張機能をサポートしない場合、
+プラグマは単に無視されます。
+
+### unrollプラグマ(unroll pragma)
+`unroll` プラグマは、実行効率のためにforループまたはwhileループを展開する必要があることをコンパイラーに伝えるために使用できます。
+
+```nim
+proc searchChar(s: string, c: char): int =
+  for i in 0 .. s.high:
+    {.unroll: 4.}
+    if s[i] == c: return i
+  result = -1
+```
+
+上記の例では、検索ループは係数4によって展開されます。
+展開係数も省略できます。
+その後、コンパイラーは適切なアンロール係数を選択します。
+
+注：現在、コンパイラはこのプラグマを認識しますが、無視します。
+
+### 即時プラグマ(immediate pragma)
+`immediate` プラグマは廃止されました。
+[typedパラメータとuntypedパラメータ](#typedパラメータとuntypedパラメータ)を参照してください。
+
+### コンパイルオプションプラグマ(compilation option pragmas)
+ここにリストされているプラ​​グマは、proc / method / converterのコード生成オプションをオーバーライドするために使用できます。
+
+| pragma | allowed values | description |
+| ------ | -------------- | ----------- |
+| checks | on\|off | すべてのランタイムチェックのコード生成をオンまたはオフにします。 |
+| boundChecks | on\|off | 配列バインドチェックのコード生成をオンまたはオフにします。 |
+| overflowChecks | on\|off | オーバーフローまたはアンダーフローチェックのコード生成をオンまたはオフにします。 |
+| nilChecks | on\|off | nilポインターチェックのコード生成をオンまたはオフにします。 |
+| assertions | on\|off | アサーションのコード生成をオンまたはオフにします。 |
+| warnings | on\|off | コンパイラの警告メッセージをオンまたはオフにします。 |
+| hints | on\|off | コンパイラのヒントメッセージをオンまたはオフにします。 |
+| optimization | none\|speed\|size | コードの速度またはサイズを最適化するか、最適化を無効にします。 |
+| patterns | on\|off | テンプレート/マクロの書き換え項をオンまたはオフにします。 |
+| callconv | cdecl\|... | 後続のすべてのプロシージャ（およびプロシージャタイプ）のデフォルトの呼び出し規約を指定します。 |
+
+例：
+
+```nim
+{.checks: off, optimization: speed.}
+# ランタイムチェックなしでコンパイルし、速度を最適化する
+```
+
+### pushとpopプラグマ(push and pop pragmas)
+`push` / `pop`プラグマは、optionディレクティブに非常に似ていますが、一時的に設定をオーバーライドするために使用されます。
+
+例：
+
+```nim
+{.push checks: off.}
+# 速度が重要なため、このセクションの実行時チェックなしでコンパイル
+# ... なんらかのコード ...
+{.pop.} # 元の設定を復元
+```
+
+`push` / `pop` は、いくつかの標準ライブラリプラグマのオン/オフを切り替えることができます。
+
+例：
+
+```nim
+{.push inline.}
+proc thisIsInlined(): int = 42
+func willBeInlined(): float = 42.0
+{.pop.}
+proc notInlined(): int = 9
+
+{.push discardable, boundChecks: off, compileTime, noSideEffect, experimental.}
+template example(): string = "https://nim-lang.org"
+{.pop.}
+
+{.push deprecated, hint[LineTooLong]: off, used, stackTrace: off.}
+proc sample(): bool = true
+{.pop.}
+```
+
+サードパーティのプラグマの場合、その実装に依存しますが、同じ構文を使用します。
+
+### レジスタプラグマ(register pragma)
+`register` プラグマは変数専用です。
+変数を `register` として宣言し、アクセスを高速化するために変数をハードウェアレジスタに配置する必要があるというヒントをコンパイラに提供します。
+Cコンパイラは通常これを無視しますが、それには十分な理由があります。
+多くの場合、Cコンパイラはそれなしでより良い仕事をします。
+
+ただし、非常に特殊な場合（たとえば、バイトコードインタープリターのディスパッチループ）には、利点があります。
+
+### グローバルプラグマ(global pragma)
+`global` プラグマをproc内の変数に適用すると、グローバルな場所に保存し、プログラムの起動時に一度初期化するようにコンパイラに指示できます。
+
+```nim
+proc isHexNumber(s: string): bool =
+  var pattern {.global.} = re"[0-9a-fA-F]+"
+  result = s.match(pattern)
+```
+
+汎用プロシージャ内で使用される場合、プロシージャのインスタンス化ごとに個別の一意のグローバル変数が作成されます。
+モジュール内で作成されたグローバル変数の初期化の順序は定義されていませんが、それらはすべて、元のモジュールの最上位変数の後、それをインポートするモジュールの変数の前に初期化されます。
+
+### pragmaプラグマ(pragma pragma)
+`pragma` プラグマは、ユーザー定義のプラグマを宣言するために使用できます。
+Nimのテンプレートとマクロはプラグマに影響しないため、これは便利です。
+ユーザー定義のプラグマは、他のすべてのシンボルとは異なるモジュール全体のスコープ内にあります。
+モジュールからインポートすることはできません。
+
+例：
+
+```nim
+when appType == "lib":
+  {.pragma: rtl, exportc, dynlib, cdecl.}
+else:
+  {.pragma: rtl, importc, dynlib: "client.dll", cdecl.}
+
+proc p*(a, b: int): int {.rtl.} =
+  result = a+b
+```
+
+この例では、ダイナミックライブラリからシンボルをインポートするか、ダイナミックライブラリ生成用にシンボルをエクスポートする、 `rtl` hという名前の新しいプラグマが導入されています。
+
+### 特性のメッセージを無効化(Disabling certain messages)
+Nimは、ユーザーを困らせる可能性のある警告とヒント（「行が長すぎます」）を生成します。
+特定のメッセージを無効にするメカニズムが提供されています。
+各ヒントおよび警告メッセージには、括弧内に記号が含まれています。
+これは、有効または無効にするために使用できるメッセージの識別子です。
+
+```nim
+{.hint[LineTooLong]: off.} # 長過ぎる行のヒントをOFFにする
+```
+
+多くの場合、これはすべての警告を一度に無効にするよりも優れています。
+
+### 使用中プラグマ(used pragma)
+Nimは、エクスポートも使用もされていないシンボルに対して警告を生成します。
+`used` プラ​​グマをシンボルに添付して、この警告を抑制することができます。
+これは、シンボルがマクロによって生成された場合に特に便利です。
+
+```nim
+template implementArithOps(T) =
+  proc echoAdd(a, b: T) {.used.} =
+    echo a + b
+  proc echoSub(a, b: T) {.used.} =
+    echo a - b
+
+# 未使用の 'echoSub' に対して警告されません
+implementArithOps(int)
+echoAdd 3, 5
+```
+
+`used` は、モジュールを「使用済み」としてマークする最上位ステートメントとしても使用できます。
+これにより、「未使用のインポート」警告が防止されます。
+
+```nim
+# module: debughelper.nim
+when defined(nimHasUsed):
+  # 'import debughelper'はデバッグに非常に役立つので、
+  # 現在使用されていなくても、Nimはそのインポートに対して警告を生成しないはずです。
+  {.used.}
+```
+
+### 実験的なプラグマ(experimental pragma)
+`experimental` プラグマは、実験的な言語機能を有効にします。
+具体的な機能に応じて、これはその機能が他の点では安定したリリースに対して不安定すぎるか、
+機能の将来が不確実である（いつでも削除される可能性がある）ことを意味します。
+
+例：
+
+```nim
+{.experimental: "parallel".}
+
+proc useParallel() =
+  parallel:
+    for i in 0..4:
+      echo "echo in parallel"
+```
+
+最上位のステートメントとして、`experimental` プラグマは、有効になっている残りのモジュールの機能を有効にします。
+これは、モジュールスコープを超えるマクロおよび一般的なインスタンス化にとって問題です。
+現在、これらの使用法は `.push / pop` 環境に配置する必要があります。
+
+```nim
+# client.nim
+proc useParallel*[T](unused: T) =
+  # use a generic T here to show the problem.
+  {.push experimental: "parallel".}
+  parallel:
+    for i in 0..4:
+      echo "echo in parallel"
+  
+  {.pop.}
+```
+
+```nim
+import client
+useParallel(1)
+```
 
 ## 実装固有のプラグマ(Implementation Specific Pragmas)
 翻訳中
