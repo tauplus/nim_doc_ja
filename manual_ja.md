@@ -5148,7 +5148,48 @@ else: echo "unlikely too: use branch table for ", myInt
 
 `linearScanEnd` プラグマは、線形スキャンでテストする必要がある最後の分岐に配置する必要があります。 case文全体の最後の分岐に配置すると、case文全体で線形スキャンが使用されます。
 
-### computedGoto pragma
+### computedGotoプラグマ(computedGoto pragma)
+`computedGoto` プラグマを使用して、 `while true` ステートメントでNimケースをコンパイルする方法をコンパイラーに指示できます。
+構文的には、ループ内のステートメントとして使用する必要があります。
+
+```nim
+type
+  MyEnum = enum
+    enumA, enumB, enumC, enumD, enumE
+
+proc vm() =
+  var instructions: array[0..100, MyEnum]
+  instructions[2] = enumC
+  instructions[3] = enumD
+  instructions[4] = enumA
+  instructions[5] = enumD
+  instructions[6] = enumC
+  instructions[7] = enumA
+  instructions[8] = enumB
+  
+  instructions[12] = enumE
+  var pc = 0
+  while true:
+    {.computedGoto.}
+    let instr = instructions[pc]
+    case instr
+    of enumA:
+      echo "yeah A"
+    of enumC, enumD:
+      echo "yeah CD"
+    of enumB:
+      echo "yeah B"
+    of enumE:
+      break
+    inc(pc)
+
+vm()
+```
+
+例が示すように、 `computedGoto` はインタープリターに最も役立ちます。
+基になるバックエンド（Cコンパイラ）が計算されたgoto拡張機能をサポートしない場合、
+プラグマは単に無視されます。
+
 ### unroll pragma
 ### immediate pragma
 ### compilation option pragmas
