@@ -5320,7 +5320,34 @@ Nimは、ユーザーを困らせる可能性のある警告とヒント（「�
 
 多くの場合、これはすべての警告を一度に無効にするよりも優れています。
 
-### used pragma
+### 使用中プラグマ(used pragma)
+Nimは、エクスポートも使用もされていないシンボルに対して警告を生成します。
+`used` プラ​​グマをシンボルに添付して、この警告を抑制することができます。
+これは、シンボルがマクロによって生成された場合に特に便利です。
+
+```nim
+template implementArithOps(T) =
+  proc echoAdd(a, b: T) {.used.} =
+    echo a + b
+  proc echoSub(a, b: T) {.used.} =
+    echo a - b
+
+# 未使用の 'echoSub' に対して警告されません
+implementArithOps(int)
+echoAdd 3, 5
+```
+
+`used` は、モジュールを「使用済み」としてマークする最上位ステートメントとしても使用できます。
+これにより、「未使用のインポート」警告が防止されます。
+
+```nim
+# module: debughelper.nim
+when defined(nimHasUsed):
+  # 'import debughelper'はデバッグに非常に役立つので、
+  # 現在使用されていなくても、Nimはそのインポートに対して警告を生成しないはずです。
+  {.used.}
+```
+
 ### experimental pragma
 
 
