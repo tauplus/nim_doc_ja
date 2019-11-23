@@ -4732,7 +4732,9 @@ proc baz: string {.registerProc.} = "baz"
 doAssert nameToProc[2][1]() == "baz"
 ```
 
-### noReturn pragma
+### 戻り値なしプラグマ(noReturn pragma)
+`noreturn` プラグマはプロシージャに戻り値がないことをマークします。
+
 ### acyclic pragma
 ### final pragma
 ### shallow pragma
