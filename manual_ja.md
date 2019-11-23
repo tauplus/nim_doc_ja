@@ -4668,7 +4668,29 @@ var x {.deprecated.}: char
 proc thing(x: bool) {.deprecated: "thongを代わりに使用してください".}
 ```
 
-### noSideEffect pragma
+### 副作用なしプラグマ(noSideEffect pragma)
+`noSideEffect` プラグマは、procやiteratorが副作用を持たないことをマークするために使用されます。
+これは、procやiteratorがパラメーターから到達可能な場所のみを変更し、戻り値が引数のみに依存することを意味します。
+`var T` または `ref T` または `ptr T` のタイプを持つパラメーターがない場合、これは副作用がないことを意味します。
+コンパイラがこれを検証できない場合にprocまたはiteratorに副作用なしのマークを付与すると静的なエラーとなります。
+
+特別なセマンティックルールとして、組み込みの `debugEcho` は副作用がないように見せかけるため、
+`noSideEffect` としてマークされたルーチンのデバッグに使用できます。
+
+`func` は、副作用のないprocの構文です。
+
+```nim
+func `+` (x, y: int): int
+```
+
+コンパイラの副作用解析を上書きするには、 `{.noSideEffect.}` プラグマブロックを使用できます。
+
+```nim
+func f() =
+  {.noSideEffect.}:
+    echo "test"
+```
+
 ### compileTime pragma
 ### noReturn pragma
 ### acyclic pragma
