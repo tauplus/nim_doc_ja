@@ -5160,5 +5160,11 @@ doAssert nameToProc[2][1]() == "baz"
 翻訳中
 
 ## スレッド(Threads)
-翻訳中
 
+### スレッドプラグマ(Thread pragma)
+
+### GCの安全性(GC safety)
+
+### Threadvarプラグマ(Threadvar pragma)
+
+### スレッドと例外(Threads and exceptions)
