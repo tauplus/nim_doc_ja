@@ -5112,7 +5112,20 @@ when not defined(objc):
 `hint` プラグマは、指定された内容のヒントメッセージをコンパイラに出力させるために使用されます。
 ヒントの後にコンパイルが続行されます。
 
-### line pragma
+### 行プラグマ(line pragma)
+`line` プラグマは、スタックバックトレースで見られるように、注釈付きステートメントの行情報に影響を与えるために使用できます。
+
+```nim
+template myassert*(cond: untyped, msg = "") =
+  if not cond:
+    # 'raise'ステートメントのランタイム行情報を変更
+    {.line: instantiationInfo().}:
+      raise newException(EAssertionFailed, msg)
+```
+
+`line` プラグマをパラメーターとともに使用する場合、パラメーターは `tuple[filename: string, line: int]` である必要があります。
+パラメーターなしで使用する場合は、 `system.InstantiationInfo()` が使用されます。
+
 ### linearScanEnd pragma
 ### computedGoto pragma
 ### unroll pragma
