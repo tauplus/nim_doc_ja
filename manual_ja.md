@@ -4901,7 +4901,12 @@ type
       children: seq[Node]
 ```
 
-### pure pragma
+### 純粋プラグマ(pure pragma)
+オブジェクト型は、実行時の型識別に使用される型フィールドが省略されるように、`pure` プラグマでマークできます。
+これは、他のコンパイル言語とのバイナリ互換性のために必要でした。
+
+列挙型は、`pure` としてマークできます。次に、そのフィールドにアクセスするには、常に列挙型名を省略しない完全な修飾が必要です。
+
 ### asmNoStackFrame pragma
 ### error pragma
 ### fatal pragma
