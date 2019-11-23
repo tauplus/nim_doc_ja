@@ -4943,6 +4943,14 @@ export baz
 
 ### スコープルール(Scope rules)
 
+#### ブロックスコープ(Block scope)
+
+#### タプルまたはオブジェクトのスコープ(Tuple or object scope)
+
+#### モジュールスコープ(Module scope)
+
+#### コードの並べ替え(Code reordering)
+
 ## コンパイラメッセージ(Compiler Messages)
 Nimコンパイラーは、ヒント、警告、エラーメッセージなど、さまざまな種類のメッセージを出力します。コンパイラが静的エラーを検出すると、エラーメッセージが表示されます。
 
