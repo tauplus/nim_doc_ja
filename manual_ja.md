@@ -5190,7 +5190,23 @@ vm()
 基になるバックエンド（Cコンパイラ）が計算されたgoto拡張機能をサポートしない場合、
 プラグマは単に無視されます。
 
-### unroll pragma
+### unrollプラグマ(unroll pragma)
+`unroll` プラグマは、実行効率のためにforループまたはwhileループを展開する必要があることをコンパイラーに伝えるために使用できます。
+
+```nim
+proc searchChar(s: string, c: char): int =
+  for i in 0 .. s.high:
+    {.unroll: 4.}
+    if s[i] == c: return i
+  result = -1
+```
+
+上記の例では、検索ループは係数4によって展開されます。
+展開係数も省略できます。
+その後、コンパイラーは適切なアンロール係数を選択します。
+
+注：現在、コンパイラはこのプラグマを認識しますが、無視します。
+
 ### immediate pragma
 ### compilation option pragmas
 ### push and pop pragmas
