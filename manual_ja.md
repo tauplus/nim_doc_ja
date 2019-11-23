@@ -4883,7 +4883,24 @@ doAssert nameToProc[2][1]() == "baz"
 `final` のプラグマをオブジェクトタイプに使用して、継承できないことを指定できます。
 継承は、既存のオブジェクトから（ `object of SuperType` 構文を介して）継承するオブジェクト、または `inheritable` としてマークされているオブジェクトでのみ使用できます。
 
-### shallow pragma
+### shallowプラグマ(shallow pragma)
+`shallow` プラグマは、型のセマンティクスに影響します。
+コンパイラーは、浅いコピー(shallow copy)の作成を許可します。
+これは重大な意味上の問題を引き起こし、メモリ安全性を破壊する可能性があります！
+ただし、Nimのセマンティクスではシーケンスと文字列の深いコピー(deep copy)が必要なため、割り当てを大幅に高速化できます。
+これは、特にシーケンスを使用してツリー構造を構築する場合、高コストになる可能性があります。
+
+```nim
+type
+  NodeKind = enum nkLeaf, nkInner
+  Node {.shallow.} = object
+    case kind: NodeKind
+    of nkLeaf:
+      strVal: string
+    of nkInner:
+      children: seq[Node]
+```
+
 ### pure pragma
 ### asmNoStackFrame pragma
 ### error pragma
