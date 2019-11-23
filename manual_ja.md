@@ -4639,7 +4639,148 @@ for a, b in enumerate([1, 2, 3, 5]):
 現在、forループマクロは`{.experimental: "forLoopMacros".}`を使用して明示的に有効にする必要があります。
 
 ## 特別な型(Special Types)
-翻訳中
+
+### static[T]
+その名前が示すように、静的パラメーターは定数式でなければなりません。
+
+```nim
+proc precompiledRegex(pattern: static string): RegEx =
+  var res {.global.} = re(pattern)
+  return res
+
+precompiledRegex("/d+") # Replaces the call with a precompiled
+                        # regex, stored in a global variable
+
+precompiledRegex(paramStr(1)) # Error, command-line options
+                              # are not constant expressions
+```
+
+コード生成のため、すべての静的パラメーターはジェネリックパラメーターとして扱われます。
+procは、指定された一意の値（または値の組み合わせ）ごとに個別にコンパイルされます。
+
+静的パラメータは、ジェネリック型のシグネチャにも表示できます。
+
+```nim
+type
+  Matrix[M,N: static int; T: Number] = array[0..(M*N - 1), T]
+    # Note how `Number` is just a type constraint here, while
+    # `static int` requires us to supply an int value
+  
+  AffineTransform2D[T] = Matrix[3, 3, T]
+  AffineTransform3D[T] = Matrix[4, 4, T]
+
+var m1: AffineTransform3D[float]  # OK
+var m2: AffineTransform2D[string] # Error, `string` is not a `Number`
+```
+
+`static T`は、基礎となるジェネリック型`static [T]`の構文上の利便性にすぎないことに注意してください。
+型パラメーターを省略して、すべての定数式の型クラスを取得できます。
+`static`を別の型クラスでインスタンス化することにより、より具体的な型クラスを作成できます。
+
+対応する`static`型に強制することで、コンパイル時に定数式として式を評価することができます。
+
+```nim
+import math
+
+echo static(fac(5)), " ", static[bool](16.isPowerOfTwo)
+```
+
+コンパイラーは、式の評価の失敗または型の不一致エラーの可能性を報告します。
+
+### typedesc[T]
+多くのコンテキストで、Nimでは型の名前を通常の値として扱うことができます。
+これらの値はコンパイル段階でのみ存在しますが、すべての値には型が必要であるため、`typedesc`は特別な型と見なされます。
+
+`typedesc`はジェネリック型のように機能します。
+たとえば、シンボル`int`の型は`typedesc[int]`です。
+通常のジェネリック型と同様に、ジェネリックパラメータが省略されると、`typedesc`はすべての型の型クラスを示します。
+構文上の利便性として、`typedesc`を修飾子として使用することもできます。
+
+`typedesc`パラメータを備えたProcは、暗黙的にジェネリックと見なされます。
+これらは、提供された型の一意の組み合わせごとにインスタンス化され、procの本体内で、各パラメーターの名前はバインドされた具象型を参照します。
+
+```nim
+proc new(T: typedesc): ref T =
+  echo "allocating ", T.name
+  new(result)
+
+var n = Node.new
+var tree = new(BinaryTree[int])
+```
+
+複数の型パラメーターが存在する場合、それらは異なる型に自由にバインドします。
+bind-onceの動作を強制するために、明示的なジェネリックパラメーターを使用できます。
+
+```nim
+proc acceptOnlyTypePairs[T, U](A, B: typedesc[T]; C, D: typedesc[U])
+```
+
+バインドされると、procシグネチャの残りの部分に型paramsを表示できます。
+
+```nim
+template declareVariableWithType(T: typedesc, value: T) =
+  var x: T = value
+
+declareVariableWithType int, 42
+```
+
+型パラメーターと一致する型のセットを制約することにより、オーバーロードの解決にさらに影響を与えることができます。
+これは実際には、テンプレートを介して型に属性をアタッチするために機能します。制約は、具象型または型クラスにすることができます。
+
+```nim
+template maxval(T: typedesc[int]): int = high(int)
+template maxval(T: typedesc[float]): float = Inf
+
+var i = int.maxval
+var f = float.maxval
+when false:
+  var s = string.maxval # error, maxval is not implemented for string
+
+template isNumber(t: typedesc[object]): string = "Don't think so."
+template isNumber(t: typedesc[SomeInteger]): string = "Yes!"
+template isNumber(t: typedesc[SomeFloat]): string = "Maybe, could be NaN."
+
+echo "is int a number? ", isNumber(int)
+echo "is float a number? ", isNumber(float)
+echo "is RootObj a number? ", isNumber(RootObj)
+```
+
+マクロは一般的にインスタンス化されないという違いがありますが、`typedesc`を渡すことはほとんど同じです。
+type expressionは他のすべてと同様に、`NimNode`としてマクロに単に渡されます。
+
+```nim
+import macros
+
+macro forwardType(arg: typedesc): typedesc =
+  # ``arg`` is of type ``NimNode``
+  let tmp: NimNode = arg
+  result = tmp
+
+var tmp: forwardType(int)
+```
+
+### typeof operator
+注：`typeof(x)`は歴史的な理由から`type(x)`と書くこともできますが、type(x)`は推奨されません。
+
+式の型を取得するには、その式から`typeof`値を作成します（他の多くの言語では、これはtypeof演算子として知られています）。
+
+```nim
+var x = 0
+var y: typeof(x) # y has type int
+```
+
+`typeof`を使用してproc/iterator/converterを呼び出す`c(x)`（`X`は空の可能性のある引数リストを表します）の結果の型を決定する場合、
+`c`がイテレーターである解釈が他の解釈より優先されますが、`typeof`の2番目の引数として`typeOfProc`を渡すことにより、動作を変更できます。
+
+```nim
+iterator split(s: string): string = discard
+proc split(s: string): seq[string] = discard
+
+# since an iterator is the preferred interpretation, `y` has the type ``string``:
+assert typeof("a b c".split) is string
+
+assert typeof("a b c".split, typeOfProc) is seq[string]
+```
 
 ## モジュール(Modules)
 翻訳中
