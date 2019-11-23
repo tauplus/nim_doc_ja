@@ -4735,7 +4735,9 @@ doAssert nameToProc[2][1]() == "baz"
 ### 戻り値なしプラグマ(noReturn pragma)
 `noreturn` プラグマはプロシージャに戻り値がないことをマークします。
 
-### acyclic pragma
+### 非循環プラグマ(acyclic pragma)
+`acyclic` プラグマは、型宣言に適用されます。非推奨であり、無視されます。
+
 ### final pragma
 ### shallow pragma
 ### pure pragma
