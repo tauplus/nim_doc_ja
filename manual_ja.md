@@ -5208,5 +5208,16 @@ proc setPerThread() =
 - GCされる共有メモリが提供されるかもしれません。
 
 ### Threadvarプラグマ(Threadvar pragma)
+変数は`threadvar`プラグマでマークできます。
+これにより、変数はスレッドローカル変数になります。
+さらに、これは`global`プラグマのすべての効果が適用されます。
+
+```nim
+var checkpoints* {.threadvar.}: seq[string]
+```
+
+実装の制限により、スレッドローカル変数は`var`セクション内で初期化できません。
+（すべてのスレッドローカル変数は、スレッドの作成時に複製される必要があります。）
 
 ### スレッドと例外(Threads and exceptions)
+
