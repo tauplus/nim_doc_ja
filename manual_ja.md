@@ -5093,7 +5093,17 @@ procには、 `asmNoStackFrame` プラグマを使用して、procのスタッ�
 proc `==`(x, y: ptr int): bool {.error.}
 ```
 
-### fatal pragma
+### 致命的なプラグマ(fatal pragma)
+`fatal` プラグマは、指定された内容のエラーメッセージをコンパイラに出力させるために使用されます。
+`error` プラグマとは対照的に、コンパイルはこのプラグマによって中止されることが保証されています。
+
+例：
+
+```nim
+when not defined(objc):
+  {.fatal: "このプログラムはobjcコマンドでコンパイルします！".}
+```
+
 ### warning pragma
 ### hint pragma
 ### line pragma
