@@ -4738,7 +4738,10 @@ doAssert nameToProc[2][1]() == "baz"
 ### 非循環プラグマ(acyclic pragma)
 `acyclic` プラグマは、型宣言に適用されます。非推奨であり、無視されます。
 
-### final pragma
+### ファイナルプラグマ(final pragma)
+`final` のプラグマをオブジェクトタイプに使用して、継承できないことを指定できます。
+継承は、既存のオブジェクトから（ `object of SuperType` 構文を介して）継承するオブジェクト、または `inheritable` としてマークされているオブジェクトでのみ使用できます。
+
 ### shallow pragma
 ### pure pragma
 ### asmNoStackFrame pragma
