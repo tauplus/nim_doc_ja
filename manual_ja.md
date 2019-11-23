@@ -4882,7 +4882,7 @@ import lib/pure/strutils as strutils
 import "gfx/3d/somemodule" # '3d'は有効なNim識別子ではないため、引用符で囲みます
 ```
 
-### 疑似インポート/インクルードパス(Pseudo import/include paths)
+#### 疑似インポート/インクルードパス(Pseudo import/include paths)
 ディレクトリは、いわゆる「擬似ディレクトリ」にすることもできます。
 同じパスを持つモジュールが複数ある場合、それらを使用してあいまいさを回避できます。
 
