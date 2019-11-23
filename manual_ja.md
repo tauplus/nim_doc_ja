@@ -5104,7 +5104,10 @@ when not defined(objc):
   {.fatal: "このプログラムはobjcコマンドでコンパイルします！".}
 ```
 
-### warning pragma
+### 警告プラグマ(warning pragma)
+`warning` プラグマは、指定された内容の警告メッセージをコンパイラーに出力させるために使用されます。
+警告の後にコンパイルが続行されます。
+
 ### hint pragma
 ### line pragma
 ### linearScanEnd pragma
