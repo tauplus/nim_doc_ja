@@ -5108,7 +5108,10 @@ when not defined(objc):
 `warning` プラグマは、指定された内容の警告メッセージをコンパイラーに出力させるために使用されます。
 警告の後にコンパイルが続行されます。
 
-### hint pragma
+### ヒントプラグマ(hint pragma)
+`hint` プラグマは、指定された内容のヒントメッセージをコンパイラに出力させるために使用されます。
+ヒントの後にコンパイルが続行されます。
+
 ### line pragma
 ### linearScanEnd pragma
 ### computedGoto pragma
