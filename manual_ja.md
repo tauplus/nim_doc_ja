@@ -4789,7 +4789,118 @@ assert typeof("a b c".split, typeOfProc) is seq[string]
 Nimコンパイラーは、ヒント、警告、エラーメッセージなど、さまざまな種類のメッセージを出力します。コンパイラが静的エラーを検出すると、エラーメッセージが表示されます。
 
 ## プラグマ(Pragmas)
-翻訳中
+プラグマは、膨大な数の新しいキーワードを導入することなく、コンパイラに追加情報/
+コマンドを提供するNimのメソッドです。プラグマは、セマンティックチェック中にその場で
+処理されます。プラグマは特別な `{.` と `.}` の中括弧で囲まれています。プラグマは、
+機能にアクセスするためのより適切な構文が利用可能になる前に、言語機能を試す最初
+の実装としてもよく使用されます。
+
+### 非推奨プラグマ(deprecated pragma)
+deprecatedプラグマはシンボルに非推奨としてのマークを付与します。
+
+```nim
+proc p() {.deprecated.}
+var x {.deprecated.}: char
+```
+
+このプラグマは、開発者に伝えるためにオプションの警告文字列を取り込むこともできます。
+
+```nim
+proc thing(x: bool) {.deprecated: "thongを代わりに使用してください".}
+```
+
+### 副作用なしプラグマ(noSideEffect pragma)
+`noSideEffect` プラグマは、procやiteratorが副作用を持たないことをマークするために使用されます。
+これは、procやiteratorがパラメーターから到達可能な場所のみを変更し、戻り値が引数のみに依存することを意味します。
+`var T` または `ref T` または `ptr T` のタイプを持つパラメーターがない場合、これは副作用がないことを意味します。
+コンパイラがこれを検証できない場合にprocまたはiteratorに副作用なしのマークを付与すると静的なエラーとなります。
+
+特別なセマンティックルールとして、組み込みの `debugEcho` は副作用がないように見せかけるため、
+`noSideEffect` としてマークされたルーチンのデバッグに使用できます。
+
+`func` は、副作用のないprocの構文です。
+
+```nim
+func `+` (x, y: int): int
+```
+
+コンパイラの副作用解析を上書きするには、 `{.noSideEffect.}` プラグマブロックを使用できます。
+
+```nim
+func f() =
+  {.noSideEffect.}:
+    echo "test"
+```
+
+### コンパイルタイムプラグマ(compileTime pragma)
+`compileTime` プラグマは、コンパイル時にのみ実行されるプロシージャまたは変数をマークするために使用されます。コードは生成されません。
+コンパイル時プロシージャは、マクロのヘルパーとして役立ちます。
+言語のバージョン0.12.0以降、パラメータータイプ内で `system.NimNode` を使用するプロシージャは、 `compileTime` で暗黙的に宣言されます。
+
+```nim
+proc astHelper(n: NimNode): NimNode =
+  result = n
+```
+
+上のコードは以下と同じです。
+
+```nim
+proc astHelper(n: NimNode): NimNode {.compileTime.} =
+  result = n
+```
+
+compileTime変数は実行時にも利用できます。
+これにより、コンパイル時には変数が満たされる特定のイディオム（lookup tablesなど）が
+簡素化されますが、実行時にはアクセスされます。
+
+```nim
+import macros
+
+var nameToProc {.compileTime.}: seq[(string, proc (): string {.nimcall.})]
+
+macro registerProc(p: untyped): untyped =
+  result = newTree(nnkStmtList, p)
+  
+  let procName = p[0]
+  let procNameAsStr = $p[0]
+  result.add quote do:
+    nameToProc.add((`procNameAsStr`, `procName`))
+
+proc foo: string {.registerProc.} = "foo"
+proc bar: string {.registerProc.} = "bar"
+proc baz: string {.registerProc.} = "baz"
+
+doAssert nameToProc[2][1]() == "baz"
+```
+
+### 戻り値なしプラグマ(noReturn pragma)
+`noreturn` プラグマはプロシージャに戻り値がないことをマークします。
+
+### 非循環プラグマ(acyclic pragma)
+`acyclic` プラグマは、型宣言に適用されます。非推奨であり、無視されます。
+
+### final pragma
+### shallow pragma
+### pure pragma
+### asmNoStackFrame pragma
+### error pragma
+### fatal pragma
+### warning pragma
+### hint pragma
+### line pragma
+### linearScanEnd pragma
+### computedGoto pragma
+### unroll pragma
+### immediate pragma
+### compilation option pragmas
+### push and pop pragmas
+### register pragma
+### global pragma
+### pragma pragma
+### Disabling certain messages
+### used pragma
+### experimental pragma
+
 
 ## 実装固有のプラグマ(Implementation Specific Pragmas)
 翻訳中
