@@ -5234,7 +5234,40 @@ proc searchChar(s: string, c: char): int =
 # ランタイムチェックなしでコンパイルし、速度を最適化する
 ```
 
-### push and pop pragmas
+### pushとpopプラグマ(push and pop pragmas)
+`push` / `pop`プラグマは、optionディレクティブに非常に似ていますが、一時的に設定をオーバーライドするために使用されます。
+
+例：
+
+```nim
+{.push checks: off.}
+# 速度が重要なため、このセクションの実行時チェックなしでコンパイル
+# ... なんらかのコード ...
+{.pop.} # 元の設定を復元
+```
+
+`push` / `pop` は、いくつかの標準ライブラリプラグマのオン/オフを切り替えることができます。
+
+例：
+
+```nim
+{.push inline.}
+proc thisIsInlined(): int = 42
+func willBeInlined(): float = 42.0
+{.pop.}
+proc notInlined(): int = 9
+
+{.push discardable, boundChecks: off, compileTime, noSideEffect, experimental.}
+template example(): string = "https://nim-lang.org"
+{.pop.}
+
+{.push deprecated, hint[LineTooLong]: off, used, stackTrace: off.}
+proc sample(): bool = true
+{.pop.}
+```
+
+サードパーティのプラグマの場合、その実装に依存しますが、同じ構文を使用します。
+
 ### register pragma
 ### global pragma
 ### pragma pragma
