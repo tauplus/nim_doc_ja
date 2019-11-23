@@ -5348,8 +5348,42 @@ when defined(nimHasUsed):
   {.used.}
 ```
 
-### experimental pragma
+### 実験的なプラグマ(experimental pragma)
+`experimental` プラグマは、実験的な言語機能を有効にします。
+具体的な機能に応じて、これはその機能が他の点では安定したリリースに対して不安定すぎるか、
+機能の将来が不確実である（いつでも削除される可能性がある）ことを意味します。
 
+例：
+
+```nim
+{.experimental: "parallel".}
+
+proc useParallel() =
+  parallel:
+    for i in 0..4:
+      echo "echo in parallel"
+```
+
+最上位のステートメントとして、`experimental` プラグマは、有効になっている残りのモジュールの機能を有効にします。
+これは、モジュールスコープを超えるマクロおよび一般的なインスタンス化にとって問題です。
+現在、これらの使用法は `.push / pop` 環境に配置する必要があります。
+
+```nim
+# client.nim
+proc useParallel*[T](unused: T) =
+  # use a generic T here to show the problem.
+  {.push experimental: "parallel".}
+  parallel:
+    for i in 0..4:
+      echo "echo in parallel"
+  
+  {.pop.}
+```
+
+```nim
+import client
+useParallel(1)
+```
 
 ## 実装固有のプラグマ(Implementation Specific Pragmas)
 翻訳中
