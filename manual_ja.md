@@ -5099,8 +5099,8 @@ proc astHelper(n: NimNode): NimNode {.compileTime.} =
 ```
 
 compileTime変数は実行時にも利用できます。
-これにより、コンパイル時には変数が満たされる特定のイディオム（lookup tablesなど）が
-簡素化されますが、実行時にはアクセスされます。
+これにより、コンパイル時に代入されるが（lookup tablesなど）、
+実行時にアクセスされる変数の特定のイディオムが簡素化されます。
 
 ```nim
 import macros
