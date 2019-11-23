@@ -4907,7 +4907,13 @@ type
 
 列挙型は、`pure` としてマークできます。次に、そのフィールドにアクセスするには、常に列挙型名を省略しない完全な修飾が必要です。
 
-### asmNoStackFrame pragma
+### アセンブリスタックフレームなしプラグマ(asmNoStackFrame pragma)
+procには、 `asmNoStackFrame` プラグマを使用して、procのスタックフレームを生成しないようコンパイラーに指示できます。
+また、`return result;` などのexitステートメントは生成されず、
+生成されたC関数は `__declspec(naked)`または `__attribute__((naked))` として宣言されます（使用されるCコンパイラに応じて）。
+
+注：このプラグマは、アセンブラーステートメントのみで構成されるプロシージャでのみ使用してください。
+
 ### error pragma
 ### fatal pragma
 ### warning pragma
