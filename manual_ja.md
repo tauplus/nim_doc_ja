@@ -4783,7 +4783,165 @@ assert typeof("a b c".split, typeOfProc) is seq[string]
 ```
 
 ## モジュール(Modules)
-翻訳中
+Nimは、モジュールコンセプトによってプログラムを複数の部分に分割することをサポートしています。
+各モジュールは、独自のファイルに存在する必要があり、独自の名前空間を持っています。
+モジュールは、情報の隠蔽と分割コンパイルを可能にします。
+モジュールは、importステートメントによって別のモジュールのシンボルにアクセスできます。
+再帰的なモジュールの依存関係は許可されますが、ちょっと微妙です。
+アスタリスク(`*`)でマークされた最上位のシンボルのみがエクスポートされます。
+有効なモジュール名は、有効なNim識別子のみです（したがって、ファイル名は`identifier.nim`です）。
+
+モジュールをコンパイルするためのアルゴリズムは次のとおりです。
+
+- importステートメントを再帰的にたどって、通常どおりモジュール全体をコンパイルします。
+- サイクルがある場合は、既に解析されたシンボルのみをインポートします（エクスポートされます）。不明な識別子が発生した場合は中止します。
+
+これは例によって最もよく説明されます：
+
+```nim
+# Module A
+type
+  T1* = int  # Module A は型``T1``をexportします
+import B     # コンパイラはBのパースを開始します
+
+proc main() =
+  var i = p(3) # Bは既に完全に解析されているため機能します
+
+main()
+```
+
+```nim
+# Module B
+import A  # Aはここではパースされません!
+          # Aの既知のシンボルのみインポートされます。
+
+proc p*(x: A.T1): A.T1 =
+  # T1は既にAのインターフェースシンボルテーブルに追加されているため、
+  # このプロシージャーは機能します。
+  result = x + 1
+```
+
+#### Import statement
+`import`ステートメントの後にモジュール名のリストを続けることができます。
+また、単一のモジュール名の後に`except`リストを続けて、いくつかのシンボルがインポートされないようにすることができます。
+
+```nim
+import strutils except `%`, toUpperAscii
+
+# doesn't work then:
+echo "$1" % "abc".toUpperAscii
+```
+
+`except`リストが実際にモジュールからエクスポートされているかどうかはチェックされません。
+この機能により、これらの識別子をエクスポートしない古いバージョンのモジュールに対してコンパイルできます。
+
+#### Include statement
+`include`ステートメントは、モジュールのインポートとは根本的に異なることを行います。
+ファイルの内容を含めるだけです。`include`ステートメントは、大きなモジュールをいくつかのファイルに分割するのに役立ちます。
+
+```nim
+include fileA, fileB, fileC
+```
+
+#### Module names in imports
+モジュールエイリアスは、`as`キーワードを介して導入できます。
+
+```nim
+import strutils as su, sequtils as qu
+
+echo su.format("$1", "lalelu")
+```
+
+元のモジュール名にはアクセスできません。
+`path/to/module`または`"path/to/module"`という表記を使用して、サブディレクトリ内のモジュールを参照できます。
+
+```nim
+import lib/pure/os, "lib/pure/times"
+```
+
+モジュール名は`strutil`であって`lib/pure/strutils`ではなく、以下のようには**できない**ことに注意して下さい。
+
+```nim
+import lib/pure/strutils
+echo lib/pure/strutils.toUpperAscii("abc") # 無効
+```
+
+同様に名前は既に`strutil`であるため、以下は意味がありません。
+
+```nim
+import lib/pure/strutils as strutils
+```
+
+#### ディレクトリからの一括インポート(Collective imports from a directory)
+`import dir / [moduleA, moduleB]`構文を使用して、同じディレクトリから複数のモジュールをインポートできます。
+
+パス名は、構文的にはNim識別子または文字列リテラルです。
+パス名が有効なNim識別子でない場合は、文字列リテラルである必要があります。
+
+```nim
+import "gfx/3d/somemodule" # '3d'は有効なNim識別子ではないため、引用符で囲みます
+```
+
+### 疑似インポート/インクルードパス(Pseudo import/include paths)
+ディレクトリは、いわゆる「擬似ディレクトリ」にすることもできます。
+同じパスを持つモジュールが複数ある場合、それらを使用してあいまいさを回避できます。
+
+There are two pseudo directories:
+
+1. `std`:`std`疑似ディレクトリは、Nimの標準ライブラリの抽象的な場所です。たとえば、構文`import std / strutils`は、標準ライブラリのstrutilsモジュールを明確に参照するために使用されます。
+1. `pkg`:`pkg`疑似ディレクトリは、Nimbleパッケージを明確に参照するために使用されます。
+ただし、このドキュメントの範囲外の技術的な詳細については、そのセマンティクスは次のとおりです。
+検索パスを使用してモジュール名を検索しますが、標準ライブラリの場所は無視します。つまり、`std`の反対です。
+
+#### From import statement
+`from`ステートメントの後、モジュール名の後に`import`を続けて、明示的な完全修飾なしで使用したいシンボルをリストします。
+
+```nim
+from strutils import `%`
+
+echo "$1" % "abc"
+# always possible: full qualification:
+echo strutils.replace("abc", "a", "z")
+```
+
+モジュールをインポートしたいが、モジュール内のすべてのシンボルへの完全修飾アクセスを強制したい場合は`from module import nil`も使用可能です。
+
+#### Export statement
+クライアントモジュールがモジュールの依存関係をインポートする必要がないように、`export`ステートメントをシンボル転送に使用できます。
+
+```nim
+# module B
+type MyObject* = object
+```
+
+```nim
+# module A
+import B
+export B.MyObject
+
+proc `$`*(x: MyObject): string = "my object"
+```
+
+```nim
+# module C
+import A
+
+# B.MyObject has been imported implicitly here:
+var x: MyObject
+echo $x
+```
+
+エクスポートされたシンボルが別のモジュールである場合、そのすべての定義が転送されます。
+`except`リストを使用して、一部のシンボルを除外できます。
+
+エクスポートするときは、モジュール名のみを指定する必要があることに注意してください。
+
+```nim
+import foo/bar/baz
+export baz
+```
+
+### スコープルール(Scope rules)
 
 ## コンパイラメッセージ(Compiler Messages)
 Nimコンパイラーは、ヒント、警告、エラーメッセージなど、さまざまな種類のメッセージを出力します。コンパイラが静的エラーを検出すると、エラーメッセージが表示されます。
