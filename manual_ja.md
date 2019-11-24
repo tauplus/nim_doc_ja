@@ -6071,6 +6071,7 @@ type
 ```
 
 ### Byrefプラグマ(Byref pragma)
+`byref`プラグマは、オブジェクトまたはタプルの型に適用でき、procに型を参照（隠しポインター）で渡すようにコンパイラーに指示します。
 
 ### Varargsプラグマ(Varargs pragma)
 
