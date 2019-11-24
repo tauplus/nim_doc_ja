@@ -6005,6 +6005,25 @@ type MyComponent = object
 
 ### Importcプラグマ(Importc pragma)
 
+### Exportcプラグマ(Exportc pragma)
+
+### Externプラグマ(Extern pragma)
+
+### Bycopyプラグマ(Bycopy pragma)
+
+### Byrefプラグマ(Byref pragma)
+
+### Varargsプラグマ(Varargs pragma)
+
+### Unionプラグマ(Union pragma)
+
+### Packedプラグマ(Packed pragma)
+
+### importのためのdynlibプラグマ(Dynlib pragma for import)
+
+### exportのためのdynlibプラグマ(Dynlib pragma for export)
+
+
 ## スレッド(Threads)
 スレッドサポートを有効にするには、コマンドラインスイッチ`--threads:on`を使用する必要があります。
 `system`モジュールには、いくつかのスレッドプリミティブが含まれています。
