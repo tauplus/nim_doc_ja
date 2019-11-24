@@ -6074,6 +6074,15 @@ type
 `byref`プラグマは、オブジェクトまたはタプルの型に適用でき、procに型を参照（隠しポインター）で渡すようにコンパイラーに指示します。
 
 ### Varargsプラグマ(Varargs pragma)
+`varargs`プラグマは、プロシージャ（およびプロシージャ型）にのみ適用できます。
+Nimに、procが最後に指定されたパラメーターの後に可変数のパラメーターを取ることができることを伝えます。
+Nim文字列値は自動的にC文字列に変換されます：
+
+```nim
+proc printf(formatstr: cstring) {.nodecl, varargs.}
+
+printf("hallo %s", "world") # "world"はC文字列として渡されます
+```
 
 ### Unionプラグマ(Union pragma)
 
