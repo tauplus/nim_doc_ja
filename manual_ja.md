@@ -5564,6 +5564,19 @@ type
 {.passC: gorge("pkg-config --cflags sdl").}
 ```
 
+### PassLプラグマ(PassL pragma)
+`passL`プラグマを使用すると、コマンドラインスイッチ`--passL`を使用する場合と同様に、追加のパラメーターをリンカーに渡すことができます。
+
+```nim
+{.passL: "-lSDLmain -lSDL".}
+```
+
+[システムモジュール](https://nim-lang.org/docs/system.html)の`gorge`を使用して、セマンティック解析中に実行される外部コマンドからパラメーターを埋め込むことができます。
+
+```nim
+{.passL: gorge("pkg-config --libs sdl").}
+```
+
 
 
 ## 外部関数インターフェース(Foreign function interface)
