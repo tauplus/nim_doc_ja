@@ -6155,7 +6155,16 @@ proc myImport(s: cstring) {.cdecl, importc, dynlib: getDllName().}
 注：`dynlib`のインポートは、`--dynlibOverride:name`コマンドラインオプションでオーバーライドできます。コンパイラユーザーガイドには詳細が含まれています。
 
 ### exportのためのdynlibプラグマ(Dynlib pragma for export)
+`dynlib`プラグマを使用すると、プロシージャを動的ライブラリにエクスポートすることもできます。
+このプラグマには引数がなく、`exportc`プラグマと組み合わせて使用​​する必要があります。
 
+```nim
+proc exportme(): int {.cdecl, exportc, dynlib.}
+```
+
+これは、プログラムが`--app:lib`コマンドラインオプションを使用して動的ライブラリとしてコンパイルされる場合にのみ役立ちます。
+このプラグマは、Windowsターゲットでのコード生成にのみ効果があるため、このプラグマを忘れて、ダイナミックライブラリがMacおよび/またはLinuxでのみテストされる場合、エラーは発生しません。
+Windowsでは、このプラグマは`__declspec(dllexport)`を関数宣言に追加します。
 
 ## スレッド(Threads)
 スレッドサポートを有効にするには、コマンドラインスイッチ`--threads:on`を使用する必要があります。
