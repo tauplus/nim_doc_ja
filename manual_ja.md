@@ -1,6 +1,8 @@
 # Nimマニュアル
 原著：Andreas Rumpf, Zahary Karadjov
+
 原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)
+
 Version：1.02
 
 ## このドキュメントについて
