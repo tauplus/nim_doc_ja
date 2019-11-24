@@ -5469,9 +5469,34 @@ useParallel(1)
 ```
 
 ## 実装固有のプラグマ(Implementation Specific Pragmas)
-翻訳中
+このセクションでは、現在のNim実装がサポートしているが、言語仕様の一部として見なされるべきではない追加のプラグマについて説明します。
 
 ### ビットサイズプラグマ(Bitsize pragma)
+`bitsize`のプラグマは、オブジェクトフィールドのメンバーのためです。C / C ++でビットフィールドとしてフィールドを宣言します。
+
+```nim
+type
+  mybitfield = object
+    flag {.bitsize:1.}: cuint
+```
+
+これは次を生成します。
+
+```nim
+struct mybitfield {
+  unsigned int flag:1;
+};
+```
+
+### Volatile pragma
+
+### NoDecl pragma
+
+### Header pragma
+
+### IncompleteStruct pragma
+
+### Compile pragma
 
 ## 外部関数インターフェース(Foreign function interface)
 翻訳中
