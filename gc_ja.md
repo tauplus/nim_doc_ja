@@ -19,6 +19,7 @@ GCは、メモリ割り当て操作でのみトリガーされます。タイマ
 完全なコレクションを強制するには`GC_fullCollect`を呼び出します。一般に、GCに処理を行わせ、完全なコレクションを強制しない方が良いことに注意してください。
 
 ## サイクルコレクター(Cycle collector)
+サイクルコレクターは、`GC_enableMarkAndSweep`および`GC_disableMarkAndSweep`を使用して、GCの他の部分から独立して有効化/無効化できます。
 
 ## リアルタイムサポート(Realtime support)
 
