@@ -6002,6 +6002,7 @@ type MyComponent = object
 ```
 
 ## 外部関数インターフェース(Foreign function interface)
+NimのFFI（外部関数インターフェイス）は広範であり、他の将来のバックエンド（LLVM/JavaScriptバックエンドなど）に対応する部分のみがここに記載されています。
 
 ### Importcプラグマ(Importc pragma)
 
