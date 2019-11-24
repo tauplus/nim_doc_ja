@@ -5878,6 +5878,41 @@ g.free()
 これを機能させるには、Objective C（コマンド`objc`）を生成するようコンパイラーに指示する必要があります。
 条件付きシンボル`objc`は、コンパイラがObjective Cコードを発行するときに定義されます。
 
+#### CodegenDeclプラグマ(CodegenDecl pragma)
+`codegenDecl`のプラグマは直接Nimのコードジェネレータに影響を与えるために使用することができます。
+生成されたコードで変数またはプロシージャを宣言する方法を決定するフォーマット文字列を受け取ります。
+
+変数の場合、フォーマット文字列の$1は変数の型を表し、$2は変数の名前です。
+
+次のNimコードは
+
+```nim
+var
+  a {.codegenDecl: "$# progmem $#".}: int
+```
+
+このCのコードを生成します。
+
+```nim
+int progmem a
+```
+
+プロシージャの場合、$1はプロシージャの戻り型、$2はプロシージャの名前、$3はパラメータリストです
+
+次のnimコードは
+
+```nim
+proc myinterrupt() {.codegenDecl: "__interrupt $# $#$#".} =
+  echo "realistic interrupt handler"
+```
+
+このコードを生成します。
+
+```nim
+__interrupt void myinterrupt()
+```
+
+
 ## 外部関数インターフェース(Foreign function interface)
 
 ### Importcプラグマ(Importc pragma)
