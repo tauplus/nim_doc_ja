@@ -5912,6 +5912,30 @@ proc myinterrupt() {.codegenDecl: "__interrupt $# $#$#".} =
 __interrupt void myinterrupt()
 ```
 
+### コンパイル時定義プラグマ(compile time define pragmas)
+ここにリストされたプラグマは、コンパイル時にオプションで-d/--defineオプションから値を受け入れるために使用できます。
+
+実装は現在、次の可能なオプションを提供します（さまざまな他のものは後で追加されるかもしれません）。
+
+|プラグマ|説明|
+|---|---|
+|intdefine|ビルド時に整数として定義します|
+|strdefine|ビルド時に文字列として定義します|
+|booldefine|ビルド時にboolとして定義を読み取ります|
+
+```nim
+const FooBar {.intdefine.}: int = 5
+echo FooBar
+```
+
+```bash
+nim c -d:FooBar=42 foobar.nim
+```
+
+上記の例では、-dフラグを指定すると、シンボル`FooBar`がコンパイル時に上書きされ、42が出力されます。
+`-d:FooBar=42`を省略すると、デフォルト値の5が使用されます。
+値が提供されたかどうかを確認するには、`defined(FooBar)`を使用できます。
+構文`-d:flag`は、実際は`-d:flag=true`の単なるショートカットです。
 
 ## 外部関数インターフェース(Foreign function interface)
 
