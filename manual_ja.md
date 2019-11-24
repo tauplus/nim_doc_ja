@@ -6007,7 +6007,7 @@ NimのFFI（外部関数インターフェイス）は広範であり、他の�
 ### Importcプラグマ(Importc pragma)
 `importc`プラグマは、Cからprocまたは変数をインポートする手段を提供します。
 オプションの引数は、C識別子を含む文字列です。
-引数が欠落している場合、C nameは正確に綴られたとおりのNim IDです。
+引数が欠落している場合、Cでの名前は正確に綴られたとおりのNim識別子です。
 
 ```nim
 proc printf(formatstr: cstring) {.header: "<stdio.h>", importc: "printf", varargs.}
@@ -6028,6 +6028,26 @@ proc p(s: cstring) {.importc: "prefix$1".}
 使用できるのは`$1`のみで、リテラルのドル記号は`$$`として記述する必要があります。
 
 ### Exportcプラグマ(Exportc pragma)
+`exportc`プラグマは、型、変数、またはプロシージャをCにエクスポートする手段を提供します。
+列挙型と定数はエクスポートできません。
+オプションの引数は、C識別子を含む文字列です。
+引数が欠落している場合、Cでの名前は正確に綴られたとおりのNim識別子です。
+
+```nim
+proc callme(formatstr: cstring) {.exportc: "callMe", varargs.}
+```
+
+このプラグマはやや間違った名前であることに注意してください。他のバックエンドは同じ名前で同じ機能を提供します。
+
+exportcに渡される文字列リテラルには、フォーマット文字列を使用できます。
+
+```nim
+proc p(s: string) {.exportc: "prefix$1".} =
+  echo s
+```
+
+この例では、`p`の外部名は`prefixp`に設定されています。
+使用できるのは`$1`のみで、リテラルのドル記号は`$$`として記述する必要があります。
 
 ### Externプラグマ(Extern pragma)
 
