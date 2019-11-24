@@ -5577,10 +5577,106 @@ type
 {.passL: gorge("pkg-config --libs sdl").}
 ```
 
+###　エミットプラグマ(Emit pragma)
+`emit`プラグマは直接コンパイラのコードジェネレータの出力に影響を与えるために使用することができます。
+そのため、コードを他のコードジェネレーター/バックエンドに移植できなくなります。
+その使用は非常に推奨されません！
+ただし、C++またはObjective Cコードとのインターフェイスには非常に便利です。
+
+例：
+
+```nim
+{.emit: """
+static int cvariable = 420;
+""".}
+
+{.push stackTrace:off.}
+proc embedsC() =
+  var nimVar = 89
+  # access Nim symbols within an emit section outside of string literals:
+  # 文字列リテラルの外のemitセクション内のNimシンボルにアクセスします:
+  {.emit: ["""fprintf(stdout, "%d\n", cvariable + (int)""", nimVar, ");"].}
+{.pop.}
+
+embedsC()
+```
+
+`nimbase.h`は、`nim c`と`nim cpp`の両方で動作する`extern "C"`コードに使用できる`NIM_EXTERNC C`マクロを定義します。
+例：
+
+```nim
+proc foobar() {.importc:"$1".}
+{.emit: """
+#include <stdio.h>
+NIM_EXTERNC
+void fun(){}
+""".}
+```
+
+後方互換性のために、emitステートメントへの引数が単一の文字列リテラルである場合、バッククォートを介してNimシンボルを参照できます。ただし、この使用法は非推奨です。
+
+トップレベルのemitステートメントの場合、生成されたC/C++ファイルでコードを発行するセクションは、
+接頭辞`/*TYPESECTION*/`または`/*VARSECTION*/`または`/*INCLUDESECTION*/`によって影響を受ける可能性があります。
+
+```nim
+{.emit: """/*TYPESECTION*/
+struct Vector3 {
+public:
+  Vector3(): x(5) {}
+  Vector3(float x_): x(x_) {}
+  float x;
+};
+""".}
+
+type Vector3 {.importcpp: "Vector3", nodecl} = object
+  x: cfloat
+
+proc constructVector3(a: cfloat): Vector3 {.importcpp: "Vector3(@)", nodecl}
+```
+
+### ImportCppプラグマ(ImportCpp pragma)
+注：[c2nim](https://github.com/nim-lang/c2nim/blob/master/doc/c2nim.rst)はC ++の大規模なサブセットを解析でき、
+`importcpp`プラグマパターン言語について認識しています。ここで説明されているすべての詳細を知る必要はありません。
+
+[Cの`importc`プラグマ](#ImportcプラグマImportc-pragma)と同様に、`importcpp`プラグマを使用して、一般にC ++メソッドまたはC++シンボルをインポートできます。
+生成されたコードは、構文を呼び出すC++メソッド`obj->method(arg)`を使用します。
+`header`と`emit`プラグマを組み合わせることで、C++で記述されたライブラリとの雑なインターフェイスが可能になります。
+
+```nim
+# C++エンジンとのインターフェース方法の恐ろしい例 ... ;-)
+
+{.link: "/usr/lib/libIrrlicht.so".}
+
+{.emit: """
+using namespace irr;
+using namespace core;
+using namespace scene;
+using namespace video;
+using namespace io;
+using namespace gui;
+""".}
+
+const
+  irr = "<irrlicht/irrlicht.h>"
+
+type
+  IrrlichtDeviceObj {.header: irr,
+                      importcpp: "IrrlichtDevice".} = object
+  IrrlichtDevice = ptr IrrlichtDeviceObj
+
+proc createDevice(): IrrlichtDevice {.
+  header: irr, importcpp: "createDevice(@)".}
+proc run(device: IrrlichtDevice): bool {.
+  header: irr, importcpp: "#.run(@)".}
+```
+
+これが機能するには、コンパイラーにC++（コマンド`cpp`）を生成するように指示する必要があります。
+コンパイラがC++コードを発行するときに、条件付きシンボル`cpp`が定義されます。
 
 
 ## 外部関数インターフェース(Foreign function interface)
-翻訳中
+
+### Importcプラグマ(Importc pragma)
 
 ## スレッド(Threads)
 スレッドサポートを有効にするには、コマンドラインスイッチ`--threads:on`を使用する必要があります。
