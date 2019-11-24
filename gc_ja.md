@@ -75,9 +75,9 @@ GCの時間測定方法（実装については`lib/system/timers.nim`を参照�
 Nimによって割り当てられたメモリをCに渡す必要がある場合は、プロシージャ`GC_ref`および`GC_unref`を使用してオブジェクトを参照済みとしてマークし、GCによって解放されないようにすることができます。
 メモリを追跡するために使用できる[system](https://nim-lang.org/docs/system.html)の他の便利なプロシージャは次のとおりです。
 
-- `getTotalMem()`:GCによって管理されている合計メモリの量を返します。
-- `getOccupiedMem()`:GCによって予約され、オブジェクトによって使用されるバイト数。
-- `getFreeMem()`:GCによって予約され、使用されていないバイト。
+- `getTotalMem()` ：GCによって管理されている合計メモリの量を返します。
+- `getOccupiedMem()` ：GCによって予約され、オブジェクトによって使用されるバイト数。
+- `getFreeMem()` ：GCによって予約され、使用されていないバイト。
 
 これらの数値は通常ヒープ全体ではなく、実行中のスレッド専用です。
 ただし、`--gc:boehm`および`--gc:go`は例外です。
@@ -95,3 +95,12 @@ GCはそれらを解放しようとしません。それらの処理が完了し
 （現在のスレッドは`dumpNumberOfInstances`を呼び出すスレッドになります。）これは後のバージョンで変更される可能性があります。
 
 ### ガベージコレクターオプション(Garbage collector options)
+ソースコードのコンパイル時に使用するガベージコレクタを選択できます。
+選択したガベージコレクタのコンパイルコマンドで`--gc:`を渡すことができます。
+
+- `--gc:refc` ：サイクル検出による遅延[参照カウント](https://en.wikipedia.org/wiki/Reference_counting)、 [スレッドローカルヒープ](https://en.wikipedia.org/wiki/Heap_(programming))、 デフォルト.
+- `--gc:markAndSweep` ：マーク&スイープベースのガベージコレクター、 [スレッドローカルヒープ](https://en.wikipedia.org/wiki/Heap_(programming)).
+- `--gc:boehm` ：[Boehm](https://en.wikipedia.org/wiki/Boehm_garbage_collector)ベースのガベージコレクター, [stop-the-world](https://en.wikipedia.org/wiki/Tracing_garbage_collection#Stop-the-world_vs._incremental_vs._concurrent)、 [shared heap](https://en.wikipedia.org/wiki/Heap_(programming)).
+- `--gc:go` ：Golangのようなガベージコレクター、 [stop-the-world](https://en.wikipedia.org/wiki/Tracing_garbage_collection#Stop-the-world_vs._incremental_vs._concurrent)、 [shared heap](https://en.wikipedia.org/wiki/Heap_(programming))
+- `--gc:regions` ：[スタック](https://en.wikipedia.org/wiki/Memory_management#Stack_allocation)ベースのガベージコレクタ.
+- `--gc:none` ：ガベージコレクターなし.
