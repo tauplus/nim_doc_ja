@@ -6,18 +6,18 @@ Version：1.02
 
 > 「地獄への道は善意で舗装されています。」
 
-## Introduction
+## イントロダクション(Introduction)
 
-## Cycle collector
+## サイクルコレクター(Cycle collector)
 
-## Realtime support
+## リアルタイムサポート(Realtime support)
 
-### Time measurement
+### 時間測定(Time measurement)
 
-### Tweaking the GC
+### GCの調整(Tweaking the GC)
 
-### Keeping track of memory
+### メモリの追跡(Keeping track of memory)
 
-## Heap dump
+## ヒープダンプ(Heap dump)
 
-### Garbage collector options
+### ガベージコレクターオプション(Garbage collector options)
