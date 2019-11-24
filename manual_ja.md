@@ -5543,6 +5543,29 @@ type
 注：NimはSHA1チェックサムを計算し、ファイルが変更された場合にのみファイルを再コンパイルします。
 `-f`コマンドラインオプションを使用して、ファイルを強制的に再コンパイルできます。
 
+### リンクプラグマ(Link pragma)
+
+`link`プラグマは、プロジェクトに追加のファイルをリンクするために使用することができます。
+
+```nim
+{.link: "myfile.o".}
+```
+
+### PassCプラグマ(PassC pragma)
+`passC`プラグマを使用すると、コマンドラインスイッチ`--passC`を使用する場合と同様に、Cコンパイラに追加のパラメーターを渡すことができます。
+
+```nim
+{.passC: "-Wall -Werror".}
+```
+
+[システムモジュール](https://nim-lang.org/docs/system.html)の`gorge`を使用して、セマンティック解析中に実行される外部コマンドからパラメーターを埋め込むことができます。
+
+```nim
+{.passC: gorge("pkg-config --cflags sdl").}
+```
+
+
+
 ## 外部関数インターフェース(Foreign function interface)
 翻訳中
 
