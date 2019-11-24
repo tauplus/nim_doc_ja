@@ -5638,8 +5638,8 @@ proc constructVector3(a: cfloat): Vector3 {.importcpp: "Vector3(@)", nodecl}
 注：[c2nim](https://github.com/nim-lang/c2nim/blob/master/doc/c2nim.rst)はC ++の大規模なサブセットを解析でき、
 `importcpp`プラグマパターン言語について認識しています。ここで説明されているすべての詳細を知る必要はありません。
 
-[Cの`importc`プラグマ](#ImportcプラグマImportc-pragma)と同様に、`importcpp`プラグマを使用して、一般にC ++メソッドまたはC++シンボルをインポートできます。
-生成されたコードは、構文を呼び出すC++メソッド`obj->method(arg)`を使用します。
+[C用の`importc`プラグマ](#ImportcプラグマImportc-pragma)と同様に、`importcpp`プラグマを使用して、一般にC ++メソッドまたはC++シンボルをインポートできます。
+生成されたコードは、C++メソッド呼び出し構文`obj->method(arg)`を使用します。
 `header`と`emit`プラグマを組み合わせることで、C++で記述されたライブラリとの雑なインターフェイスが可能になります。
 
 ```nim
@@ -5673,6 +5673,210 @@ proc run(device: IrrlichtDevice): bool {.
 これが機能するには、コンパイラーにC++（コマンド`cpp`）を生成するように指示する必要があります。
 コンパイラがC++コードを発行するときに、条件付きシンボル`cpp`が定義されます。
 
+### ImportJsプラグマ(ImportJs pragma)
+[C++用の`importcpp`プラグマ](#ImportCppプラグマImportCpp-pragma)と同様に、`importjs`プラグマを使用して、Javascriptメソッドまたはシンボル一般をインポートできます。
+生成されたコードは、Javascriptメソッド呼び出し構文`obj.method(arg)`を使用します。
+
+#### 名前空間(Namespaces)
+ずさんなインターフェイスの例では、`.emit`を使用して`using namespace`宣言を使用して生成します。
+通常は、代わりに`namespace::identifier`を使用してインポートされた名前を参照する方がはるかに優れています。
+
+```nim
+type
+  IrrlichtDeviceObj {.header: irr,
+                      importcpp: "irr::IrrlichtDevice".} = object
+```
+
+#### Importcpp for enums
+importcppが列挙型に適用されると、この例のように、数値列挙値にC++列挙型の注釈が付けられます：`((TheCppEnum)(3))`
+（これが実装する最も簡単な方法であることが判明しました。）
+
+#### Importcpp for procs
+procsの`importcpp`バリアントは、最大限の柔軟性を得るためにやや不可解なパターン言語を使用していることに注意してください。
+
+- ハッシュ`#`記号は、最初または次の引数に置き換えられます。
+- ハッシュに続くドット`#.`呼び出しでC++のドット表記または矢印表記を使用する必要があることを示します。
+- `@`シンボルは、カンマで区切られた残りの引数に置き換えられます。
+
+例：
+
+```nim
+proc cppMethod(this: CppObj, a, b, c: cint) {.importcpp: "#.CppMethod(@)".}
+var x: ptr CppObj
+cppMethod(x[], 1, 2, 3)
+```
+
+これは次を生成します。
+
+```nim
+x->CppMethod(1, 2, 3)
+```
+
+`importcpp`プラグマの古いバージョンとの後方互換性を保つための特別なルールとして、特別なパターン文字（`# ' @`のいずれか）がまったくない場合、
+C++のドット表記または矢印表記が想定されるため、上記の例を次のように書くこともできます：
+
+```nim
+proc cppMethod(this: CppObj, a, b, c: cint) {.importcpp: "CppMethod".}
+```
+
+パターン言語は、当然C ++の演算子のオーバーロード機能もカバーしていることに注意してください。
+
+```nim
+proc vectorAddition(a, b: Vec3): Vec3 {.importcpp: "# + #".}
+proc dictLookup(a: Dict, k: Key): Value {.importcpp: "#[#]".}
+```
+
+- 範囲0..9の整数`i`が続くアポストロフィ`は、i番目のパラメータータイプに置き換えられます。
+0番目の位置はresult型です。
+これを使用して、型をC++関数テンプレートに渡すことができます。
+`'`と数字の間で、アスタリスクを使用して、型の基本型を取得できます。
+（つまり、型から`*`を取り去る; `T*`は`T`になります。）2つの`*`を使用して、要素型などの要素型に到達できます。
+
+例：
+
+```nim
+type Input {.importcpp: "System::Input".} = object
+proc getSubsystem*[T](): ptr T {.importcpp: "SystemManager::getSubsystem<'*0>()", nodecl.}
+
+let x: ptr Input = getSubsystem[Input]()
+```
+
+これは次を生成します。
+
+```nim
+x = SystemManager::getSubsystem<System::Input>()
+```
+
+- `#@`は、`cnew`操作をサポートする特別なケースです。
+一時的な場所を経由せずに、呼び出し式が直接インライン化されるようにする必要があります。
+これは、現在のコードジェネレーターの制限を回避するためにのみ必要です。
+
+たとえば、C ++の`new`演算子は次のように「インポート」できます。
+
+```nim
+proc cnew*[T](x: T): ptr T {.importcpp: "(new '*0#@)", nodecl.}
+
+# constructor of 'Foo':
+proc constructFoo(a, b: cint): Foo {.importcpp: "Foo(@)".}
+
+let x = cnew constructFoo(3, 4)
+```
+
+これは次を生成します。
+
+```nim
+x = new Foo(3, 4)
+```
+
+ただし、ユースケースによっては`new Foo`の代わりに次のようにラップすることもできます。
+
+```nim
+proc newFoo(a, b: cint): ptr Foo {.importcpp: "new Foo(@)".}
+
+let x = newFoo(3, 4)
+```
+
+#### Wrapping constructors
+C++クラスにはプライベートコピーコンストラクターがあるため、`Class c = Class(1,2);`のようなコードは生成されてはならず、代わりに`Class c(1,2);`が必要です。
+この目的のために、C++コンストラクターをラップするNim procには、constructorプラグマで注釈を付ける必要があります。
+このプラグマは、constructionがコピーコンストラクターを呼び出さないため、より高速なC++コードの生成にも役立ちます。
+
+```nim
+# 'Foo'のより良いコンストラクタ:
+proc constructFoo(a, b: cint): Foo {.importcpp: "Foo(@)", constructor.}
+```
+
+#### Wrapping destructors
+NimはC++を直接生成するため、デストラクタはスコープの出口でC++コンパイラによって暗黙的に呼び出されます。
+これは、デストラクタをまったくラップしないで済むことが多いことを意味します！
+ただし、明示的に呼び出す必要がある場合は、ラップする必要があります。
+パターン言語は、必要なものすべてを提供します。
+
+```nim
+proc destroyFoo(this: var Foo) {.importcpp: "#.~Foo()".}
+```
+
+#### Importcpp for objects
+汎用`importcpp`'edオブジェクトはC++テンプレートにマップされます。
+これは、オブジェクト型のパターン言語を必要とせずに、C++のテンプレートをかなり簡単にインポートできることを意味します。
+
+```nim
+type
+  StdMap {.importcpp: "std::map", header: "<map>".} [K, V] = object
+proc `[]=`[K, V](this: var StdMap[K, V]; key: K; val: V) {.
+  importcpp: "#[#] = #", header: "<map>".}
+
+var x: StdMap[cint, cdouble]
+x[6] = 91.4
+```
+
+これは次を生成します。
+
+```nim
+std::map<int, double> x;
+x[6] = 91.4;
+```
+
+- より正確な制御が必要な場合は、提供されたパターンでアポストロフィ`'`を使用して、ジェネリック型の具体的な型パラメーターを示すことができます。
+詳細については、procパターンでのアポストロフィ演算子の使用法を参照してください。
+
+```nim
+type
+  VectorIterator {.importcpp: "std::vector<'0>::iterator".} [T] = object
+
+var x: VectorIterator[cint]
+```
+
+これは次を生成します。
+
+```nim
+std::vector<int>::iterator x;
+```
+
+### ImportObjCプラグマ(ImportObjC pragma)
+C用の`importc`プラグマと同様に、`importobjc`プラグマを使用してObjective Cメソッドをインポートできます。
+生成されたコードは、Objective Cメソッド呼び出し構文`[obj method param1: arg]`を使用します。
+さらに、`header`と`emit`プラグマを使用すると、Objective Cで記述されたライブラリとの雑なインターフェイスが可能になります。
+
+```nim
+# GNUStepとのインターフェース方法の恐ろしい例...
+
+{.passL: "-lobjc".}
+{.emit: """
+#include <objc/Object.h>
+@interface Greeter:Object
+{
+}
+
+- (void)greet:(long)x y:(long)dummy;
+@end
+
+#include <stdio.h>
+@implementation Greeter
+
+- (void)greet:(long)x y:(long)dummy
+{
+  printf("Hello, World!\n");
+}
+@end
+
+#include <stdlib.h>
+""".}
+
+type
+  Id {.importc: "id", header: "<objc/Object.h>", final.} = distinct int
+
+proc newGreeter: Id {.importobjc: "Greeter new", nodecl.}
+proc greet(self: Id, x, y: int) {.importobjc: "greet", nodecl.}
+proc free(self: Id) {.importobjc: "free", nodecl.}
+
+var g = newGreeter()
+g.greet(12, 34)
+g.free()
+```
+
+これを機能させるには、Objective C（コマンド`objc`）を生成するようコンパイラーに指示する必要があります。
+条件付きシンボル`objc`は、コンパイラがObjective Cコードを発行するときに定義されます。
 
 ## 外部関数インターフェース(Foreign function interface)
 
