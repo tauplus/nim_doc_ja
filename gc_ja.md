@@ -54,6 +54,17 @@ proc GC_step*(us: int, strongAdvice = false, stackSize = -1)
 テストでは、最新のCPU（サイクルコレクターを無効にした場合）のほとんどすべてのケースで2msの最大休止時間が満たされることが示されています。
 
 ### 時間測定(Time measurement)
+GCの時間測定方法（実装については`lib/system/timers.nim`を参照）：
+
+- Windowsの`QueryPerformanceCounter`および`QueryPerformanceFrequency`
+- Mac OS Xの`mach_absolute_time`
+- Posixシステムの`gettimeofday`
+
+そのため、内部でナノ秒の解像度をサポートしています。
+ただし、便宜上、APIはマイクロ秒を使用します。
+
+シンボル`reportMissedDeadlines`を定義して、期限に間に合わなかった場合にGC出力を作成します。
+コレクターの以降のバージョンでは、APIによってレポート機能が強化されサポートされます。
 
 ### GCの調整(Tweaking the GC)
 
