@@ -5937,6 +5937,70 @@ nim c -d:FooBar=42 foobar.nim
 値が提供されたかどうかを確認するには、`defined(FooBar)`を使用できます。
 構文`-d:flag`は、実際は`-d:flag=true`の単なるショートカットです。
 
+###　カスタム注釈(Custom annotations)
+カスタム型付きプラグマを定義することは可能です。
+カスタムプラグマはコード生成に直接影響しませんが、マクロによってその存在を検出できます。
+カスタムプラグマは、`pragma`プラグマの注釈が付いたテンプレートを使用して定義されます。
+
+```nim
+template dbTable(name: string, table_space: string = "") {.pragma.}
+template dbKey(name: string = "", primary_key: bool = false) {.pragma.}
+template dbForeignKey(t: typedesc) {.pragma.}
+template dbIgnore {.pragma.}
+```
+
+可能なオブジェクトリレーションマッピング（ORM）実装の定型化された例を検討します。
+
+```nim
+const tblspace {.strdefine.} = "dev" # 開発環境、テスト環境、および製品環境の切り替え
+
+type
+  User {.dbTable("users", tblspace).} = object
+    id {.dbKey(primary_key = true).}: int
+    name {.dbKey"full_name".}: string
+    is_cached {.dbIgnore.}: bool
+    age: int
+  
+  UserProfile {.dbTable("profiles", tblspace).} = object
+    id {.dbKey(primary_key = true).}: int
+    user_id {.dbForeignKey: User.}: int
+    read_access: bool
+    write_access: bool
+    admin_acess: bool
+```
+
+この例では、カスタムプラグマを使用して、Nimオブジェクトをリレーショナルデータベースのスキーマにマップする方法を説明しています。
+カスタムプラグマには、0個以上の引数を指定できます。
+複数の引数を渡すには、テンプレート呼び出し構文のいずれかを使用します。
+すべての引数は型付けされ、テンプレートの標準的なオーバーロード解決規則に従います。
+したがって、引数にデフォルト値を設定し、名前や可変引数などで渡すことができます。
+
+カスタムプラグマは、通常のプラグマを指定できるすべての場所で使用できます。
+プロシージャ、テンプレート、型と変数の定義、ステートメントなどに注釈を付けることができます。
+
+マクロモジュールには、カスタムプラグマアクセス`hasCustomPragma`、`getCustomPragmaVal`を簡素化するために使用できるヘルパーが含まれています。
+詳細については、マクロモジュールのドキュメントを参照してください。
+これらのマクロは魔法ではなく、ASTオブジェクト表現を歩いても自分でできないことは何もしません。
+
+カスタムプラグマを使用したその他の例：
+
+- より優れたシリアル化/逆シリアル化制御：
+
+```nim
+type MyObj = object
+  a {.dontSerialize.}: int
+  b {.defaultDeserialize: 5.}: int
+  c {.serializationKey: "_c".}: string
+```
+
+- ゲームエンジンでのGUIインスペクターのための型の採用：
+
+```nim
+type MyComponent = object
+  position {.editable, animatable.}: Vector3
+  alpha {.editRange: [0.0..1.0], animatable.}: float32
+```
+
 ## 外部関数インターフェース(Foreign function interface)
 
 ### Importcプラグマ(Importc pragma)
