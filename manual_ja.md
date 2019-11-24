@@ -6102,6 +6102,57 @@ printf("hallo %s", "world") # "world"はC文字列として渡されます
 継承を伴う使用法を定義し、文書化する必要があります。
 
 ### importのためのdynlibプラグマ(Dynlib pragma for import)
+`dynlib`プラグマを使用すると、動的ライブラリ（Windowsの場合は`.dll`ファイル、UNIXの場合は`lib*.so`ファイル）からプロシージャまたは変数をインポートできます。
+オプションではない引数は、動的ライブラリの名前でなければなりません。
+
+```nim
+proc gtk_image_new(): PGtkWidget
+  {.cdecl, dynlib: "libgtk-x11-2.0.so", importc.}
+```
+
+一般に、動的ライブラリのインポートには、特別なリンカーオプションやインポートライブラリとのリンクは必要ありません。
+これは、開発パッケージをインストールする必要がないことも意味します。
+
+`dynlib`のインポートメカニズムは、バージョン管理スキームをサポートしています。
+
+```nim
+proc Tcl_Eval(interp: pTcl_Interp, script: cstring): int {.cdecl,
+  importc, dynlib: "libtcl(|8.5|8.4|8.3).so.(1|0)".}
+```
+
+実行時に、動的ライブラリが（次の順序で）検索されます：
+
+```nim
+libtcl.so.1
+libtcl.so.0
+libtcl8.5.so.1
+libtcl8.5.so.0
+libtcl8.4.so.1
+libtcl8.4.so.0
+libtcl8.3.so.1
+libtcl8.3.so.0
+```
+
+`dynlib`プラグマは、引数として定数文字列だけでなく、一般的な文字列式もサポートしています。
+
+```nim
+import os
+
+proc getDllName: string =
+  result = "mylib.dll"
+  if existsFile(result): return
+  result = "mylib2.dll"
+  if existsFile(result): return
+  quit("could not load dynamic library")
+
+proc myImport(s: cstring) {.cdecl, importc, dynlib: getDllName().}
+```
+
+注：`libtcl(|8.5|8.4).so`のようなパターンは、プリコンパイルされるため、定数文字列でのみサポートされます。
+
+注：`dynlib`プラグマへの変数の受け渡しは、初期化の順序の問題のため、実行時に失敗します。
+
+注：`dynlib`のインポートは、`--dynlibOverride:name`コマンドラインオプションでオーバーライドできます。コンパイラユーザーガイドには詳細が含まれています。
 
 ### exportのためのdynlibプラグマ(Dynlib pragma for export)
 
