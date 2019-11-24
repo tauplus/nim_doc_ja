@@ -5488,15 +5488,60 @@ struct mybitfield {
 };
 ```
 
-### Volatile pragma
+### 揮発性プラグマ(Volatile pragma)
+揮発性のプラグマは、変数だけのためです。
+C/C ++で意味するものは何でも、変数を`volatile`として宣言します（そのセマンティクスはC/C ++で十分に定義されていません）。
 
-### NoDecl pragma
+注：このプラグマは、LLVMバックエンドには存在しません。
 
-### Header pragma
+### NoDeclプラグマ(NoDecl pragma)
+`noDecl`のプラグマは、ほぼすべての記号（変数、PROC、型など）に適用でき、Cとの相互運用性のために、時には有用です。
+それは、Cコードでシンボルの宣言を生成しないことをNimに伝えます。例えば：
 
-### IncompleteStruct pragma
+```nim
+var
+  EACCES {.importc, noDecl.}: cint # EACCESが変数であるふりをする、
+                                   # Nimはその値を知らない
+```
 
-### Compile pragma
+ただし、多くの場合、`header`プラグマの方が優れています。
+
+注：これはLLVMバックエンドでは機能しません。
+
+### ヘッダープラグマ(Header pragma)
+`header`プラグマは`noDecl`プラグマに非常に似ています。
+ほとんどすべてのシンボルに適用でき、宣言しないように指定し、代わりに生成コードに`#include`を含める必要があります。
+
+```nim
+type
+  PFile {.importc: "FILE*", header: "<stdio.h>".} = distinct pointer
+    # CのFILE* 型をインポートする。Nimはそれを新しいポインタ型として扱います。
+```
+
+`header`プラグマは常に文字列定数を期待しています。
+文字列定数にはヘッダーファイルが含まれます。
+Cの場合と同様に、システムヘッダーファイルは山括弧`<>`で囲まれています。
+山括弧が指定されていない場合、Nimは生成されたCコードのヘッダーファイルを`""`で囲みます。
+
+注：これはLLVMバックエンドでは機能しません。
+
+### IncompleteStructプラグマ(IncompleteStruct pragma)
+`incompleteStruct`のプラグマは、`sizeof`式で基になるCの`struct`を使用しないようコンパイラーに指示します。
+```nim
+type
+  DIR* {.importc: "DIR", header: "<dirent.h>",
+         pure, incompleteStruct.} = object
+```
+
+### コンパイルプラグマ(Compile pragma)
+`compile`プラグマは、プロジェクトとC/C ++ソースファイルをコンパイルしてリンクするために使用することができます。
+
+```nim
+{.compile: "myfile.cpp".}
+```
+
+注：NimはSHA1チェックサムを計算し、ファイルが変更された場合にのみファイルを再コンパイルします。
+`-f`コマンドラインオプションを使用して、ファイルを強制的に再コンパイルできます。
 
 ## 外部関数インターフェース(Foreign function interface)
 翻訳中
