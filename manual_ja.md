@@ -6005,6 +6005,27 @@ type MyComponent = object
 NimのFFI（外部関数インターフェイス）は広範であり、他の将来のバックエンド（LLVM/JavaScriptバックエンドなど）に対応する部分のみがここに記載されています。
 
 ### Importcプラグマ(Importc pragma)
+`importc`プラグマは、Cからprocまたは変数をインポートする手段を提供します。
+オプションの引数は、C識別子を含む文字列です。
+引数が欠落している場合、C nameは正確に綴られたとおりのNim IDです。
+
+```nim
+proc printf(formatstr: cstring) {.header: "<stdio.h>", importc: "printf", varargs.}
+```
+
+このプラグマは、jsオブジェクトおよび関数のためのjsバックエンドでも機能するように過去に悪用されていることに注意してください。
+他のバックエンドは、同じ名前で同じ機能を提供します。また、ターゲット言語がCに設定されていない場合、他のプラグマを使用できます。
+
+- [importcpp](#ImportcppプラグマImportcpp-pragma)
+- [importobjc](#ImportObjCプラグマImportObjC-pragma)
+- [importjs](#ImportJsプラグマImportJs-pragma)
+
+```nim
+proc p(s: cstring) {.importc: "prefix$1".}
+```
+
+この例では、`p`の外部名は`prefixp`に設定されています。
+使用できるのは`$1`のみで、リテラルのドル記号は`$$`として記述する必要があります。
 
 ### Exportcプラグマ(Exportc pragma)
 
