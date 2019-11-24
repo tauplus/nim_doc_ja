@@ -6050,8 +6050,25 @@ proc p(s: string) {.exportc: "prefix$1".} =
 使用できるのは`$1`のみで、リテラルのドル記号は`$$`として記述する必要があります。
 
 ### Externプラグマ(Extern pragma)
+`exportc`または`importc`と同様に、`extern`プラグマは名前のマングリングに影響します。
+`extern`に渡される文字列リテラルは、フォーマット文字列にすることができます。
+
+```nim
+proc p(s: string) {.extern: "prefix$1".} =
+  echo s
+```
+
+この例では、`p`の外部名は`prefixp`に設定されています。
+使用できるのは`$1`のみで、リテラルのドル記号は`$$`として記述する必要があります。
 
 ### Bycopyプラグマ(Bycopy pragma)
+`bycopy`プラグマは、オブジェクトまたはタプル型に適用され、手続きオブジェクトに値によって型を渡すためにコンパイラに指示することができます。
+
+```nim
+type
+  Vector {.bycopy.} = object
+    x, y, z: float
+```
 
 ### Byrefプラグマ(Byref pragma)
 
