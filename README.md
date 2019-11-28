@@ -3,3 +3,4 @@
 
 - [Nimマニュアル](https://github.com/tauplus/nim_doc_ja/blob/master/manual_ja.md)
 - [Nimのガベージコレクタ](https://github.com/tauplus/nim_doc_ja/blob/master/gc_ja.md)
+- [Nimのメモリモデル](https://github.com/tauplus/nim_doc_ja/blob/master/nim-meory_ja.md)
