@@ -5675,10 +5675,6 @@ proc run(device: IrrlichtDevice): bool {.
 これが機能するには、コンパイラーにC++（コマンド`cpp`）を生成するように指示する必要があります。
 コンパイラがC++コードを発行するときに、条件付きシンボル`cpp`が定義されます。
 
-### ImportJsプラグマ(ImportJs pragma)
-[C++用の`importcpp`プラグマ](#ImportCppプラグマImportCpp-pragma)と同様に、`importjs`プラグマを使用して、Javascriptメソッドまたはシンボル一般をインポートできます。
-生成されたコードは、Javascriptメソッド呼び出し構文`obj.method(arg)`を使用します。
-
 #### 名前空間(Namespaces)
 ずさんなインターフェイスの例では、`.emit`を使用して`using namespace`宣言を使用して生成します。
 通常は、代わりに`namespace::identifier`を使用してインポートされた名前を参照する方がはるかに優れています。
@@ -5834,6 +5830,10 @@ var x: VectorIterator[cint]
 ```nim
 std::vector<int>::iterator x;
 ```
+
+### ImportJsプラグマ(ImportJs pragma)
+[C++用の`importcpp`プラグマ](#ImportCppプラグマImportCpp-pragma)と同様に、`importjs`プラグマを使用して、Javascriptメソッドまたはシンボル一般をインポートできます。
+生成されたコードは、Javascriptメソッド呼び出し構文`obj.method(arg)`を使用します。
 
 ### ImportObjCプラグマ(ImportObjC pragma)
 C用の`importc`プラグマと同様に、`importobjc`プラグマを使用してObjective Cメソッドをインポートできます。
