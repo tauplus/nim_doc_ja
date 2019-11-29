@@ -4,7 +4,7 @@
 
 原文：[https://nim-lang.org/docs/gc.html](https://nim-lang.org/docs/gc.html)
 
-Version：1.0.2
+Version：1.0.4
 
 > 「地獄への道は善意で舗装されています。」
 
@@ -106,3 +106,10 @@ GCはそれらを解放しようとしません。それらの処理が完了し
 - `--gc:go` ：Golangのようなガベージコレクター、 [stop-the-world](https://en.wikipedia.org/wiki/Tracing_garbage_collection#Stop-the-world_vs._incremental_vs._concurrent)、 [shared heap](https://en.wikipedia.org/wiki/Heap_(programming))
 - `--gc:regions` ：[スタック](https://en.wikipedia.org/wiki/Memory_management#Stack_allocation)ベースのガベージコレクタ.
 - `--gc:none` ：ガベージコレクターなし.
+
+同じNimコードをコンパイルして、任意のガベージコレクターを使用できます。
+通常、Nim構文は、ガベージコレクターごとに変更されません。
+[JavaScriptおよびNodeJS](https://nim-lang.org/docs/backends.html#backends-the-javascript-target)コンパイルターゲットにはガベージコレクターは使用されません。
+[NimScript](https://nim-lang.org/docs/nims.html)ターゲットはNim VMガベージコレクターを使用します。
+
+Nimを初めて使用し、始めたばかりの場合、デフォルトのガベージコレクタは、ほとんどの一般的なユースケースに適合するようにバランスが取られています。
