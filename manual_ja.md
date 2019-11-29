@@ -2393,7 +2393,7 @@ var
 |tuple[x: A, y: B, ...]|(default(A), default(B), ...) (オブジェクトに類似)|
 |array[0..., T]|[default(T), ...]|
 |range[T]|default(T); これは有効値の範囲外である可能性があります|
-|T = enum|castT; これは無効な値である可能性があります|
+|T = enum|cast[T]\(0); これは無効な値である可能性があります|
 
 noinitプラグマを使用すると、最適化のために暗黙的な初期化を回避できます。
 
@@ -5448,12 +5448,18 @@ when defined(nimHasUsed):
 例：
 
 ```nim
+import threadpool
 {.experimental: "parallel".}
+
+proc threadedEcho(s: string, i: int) =
+  echo(s, " ", $i)
 
 proc useParallel() =
   parallel:
     for i in 0..4:
-      echo "echo in parallel"
+      spawn threadedEcho("echo in parallel", i)
+
+useParallel()
 ```
 
 最上位のステートメントとして、`experimental` プラグマは、有効になっている残りのモジュールの機能を有効にします。
