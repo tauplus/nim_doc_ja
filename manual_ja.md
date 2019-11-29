@@ -1345,7 +1345,7 @@ typedef struct {
 
 タプルの割り当て演算子は、各コンポーネントをコピーします。
 オブジェクトのデフォルトの割り当て演算子は、各コンポーネントをコピーします。
-代入演算子のオーバーロードについては、type-bound-operations-operatorで説明しています。
+代入演算子のオーバーロードについては、[ここ](https://nim-lang.org/docs/manual_experimental.html#type-bound-operations)で説明しています。
 
 ```nim
 type
@@ -1970,7 +1970,7 @@ db.query("SELECT FROM users WHERE name = '$1'".SQL % [username])
 ```
 これで、SQLインジェクション攻撃に対するコンパイル時のチェックができました。
 `"".SQL`は`SQL("")`に変換されるため、見栄えの良いSQL文字列リテラルに新しい構文は必要ありません。
-仮想SQL型は、[db_sqlite](https://nim-lang.org/docs/db_sqlite.html)などのモジュールの[TSqlQuery](https://nim-lang.org/docs/db_sqlite.html#TSqlQuery)型として実際にライブラリに存在します。
+仮想SQL型は、[db_sqlite](https://nim-lang.org/docs/db_sqlite.html)などのモジュールの[SqlQuery](https://nim-lang.org/docs/db_common.html#SqlQuery)型として実際にライブラリに存在します。
 
 ### オート型(Auto type)
 `auto`型は戻り値の型やパラメータのために使用することができます。
@@ -3123,7 +3123,7 @@ assert x == y
 
 #### ループ内でのクロージャーの作成(Creating closures in loops)
 クロージャーは参照によってローカル変数をキャプチャするため、ループ本体内での動作が望ましくないことがよくあります。
-この動作を変更する方法の詳細については[closureScope](https://nim-lang.org/docs/system.html#closureScope)参照。
+この動作を変更する方法の詳細については[closureScope](https://nim-lang.org/docs/system.html#closureScope.t,untyped)参照。
 
 ### 匿名プロシージャー(Anonymous Procs)
 名前のないプロシージャは、他のプロシージャに渡すラムダ式として使用できます。
@@ -5073,7 +5073,7 @@ proc thing(x: bool) {.deprecated: "thongを代わりに使用してください"
 `var T` または `ref T` または `ptr T` のタイプを持つパラメーターがない場合、これは副作用がないことを意味します。
 コンパイラがこれを検証できない場合にprocまたはiteratorに副作用なしのマークを付与すると静的なエラーとなります。
 
-特別なセマンティックルールとして、組み込みの [`debugEcho`](https://nim-lang.org/docs/system.html#debugEcho%2Cvarargs%5Btyped%2C%5D) は副作用がないように見せかけるため、
+特別なセマンティックルールとして、組み込みの [`debugEcho`](https://nim-lang.org/docs/system.html#debugEcho,varargs[typed,]) は副作用がないように見せかけるため、
 `noSideEffect` としてマークされたルーチンのデバッグに使用できます。
 
 `func` は、副作用のないprocの糖衣構文です。
