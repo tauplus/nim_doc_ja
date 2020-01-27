@@ -3,7 +3,7 @@
 
 原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)
 
-Version：1.0.4
+Version：1.0.6
 
 ## このドキュメントについて
 注：このドキュメントはドラフトです！Nimの機能のいくつかには、より正確な表現が必要な場合があります。このマニュアルは常に適切な仕様に進化しています。 
@@ -417,11 +417,15 @@ FLOAT64_LIT = HEX_LIT '\'' FLOAT64_SUFFIX
 ### 演算子(Operators)
 Nimでは、ユーザー定義の演算子を使用できます。
 演算子は、次の文字の任意の組み合わせです。
+
 ```
 =     +     -     *     /     <     >
 @     $     ~     &     %     |
 !     ?     ^     .     :     \
 ```
+
+（文法はターミナルOPRを使用して、ここで定義されている演算子記号を参照します。）
+
 次のキーワードも演算子です:`and or not xor shl shr div mod in notin is isnot of`
 
 . =, :, :: は一般的な演算子として使用できません。これらは他の表記上の目的に使用されます。
@@ -3057,14 +3061,14 @@ proc `host=`*(s: var Socket, value: int) {.inline.} =
   ## setter of hostAddr.
   ## This accesses the 'host' field and is not a recursive call to
   ## ``host=`` because the builtin dot access is preferred if it is
-  ## avaliable:
+  ## available:
   s.host = value
 
 proc host*(s: Socket): int {.inline.} =
   ## getter of hostAddr
   ## This accesses the 'host' field and is not a recursive call to
   ## ``host`` because the builtin dot access is preferred if it is
-  ## avaliable:
+  ## available:
   s.host
 ````
 
@@ -3279,7 +3283,7 @@ Nimの今後のバージョンでは、次のような構文を使用して借�
 proc foo(other: Y; container: var X): var T from container
 ```
 
-ここで、`var T from container`は、locationが2番目のパラメータ（この場合はcontainerと呼ばれる）から外れていることを明示的に公開します。
+ここで、`var T from container`は、locationが2番目のパラメータ（この場合はcontainerと呼ばれる）から派生したことを明示的に公開します。
 構文`var T from p`は、`varTy[T, 1]`と互換性のない型`varTy[T, 2]`を指定します。
 
 ### 添字演算子のオーバーロード(Overloading of the subscript operator)
@@ -3657,6 +3661,24 @@ try:
   # ...
 except:
   echo getCurrentExceptionMsg()
+```
+
+### Custom exceptions(カスタム例外)
+カスタム例外を作成することが可能です。これにより、nimによって発生した例外と独自のコードからの例外を簡単に区別できます。
+
+カスタム例外はカスタム型です。
+
+```nim
+type
+  LoadError* = object of Exception
+```
+
+カスタム例外の名前は`Error`で終了することを推奨します。
+
+カスタム例外は、他の例と同様に発生させることができます
+
+```nim
+raise newException(LoadError, "Failed to load data")
 ```
 
 ### Defer statement
