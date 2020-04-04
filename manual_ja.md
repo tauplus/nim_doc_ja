@@ -3,7 +3,7 @@
 
 原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)
 
-Version：1.0.6
+Version：1.2.0
 
 ## このドキュメントについて
 注：このドキュメントはドラフトです！Nimの機能のいくつかには、より正確な表現が必要な場合があります。このマニュアルは常に適切な仕様に進化しています。 
