@@ -66,11 +66,11 @@ Nimプログラムは、Nimコードを含む1つ以上のテキストソース�
 セマンティック分析中に検出されたエラーは、静的エラーと呼ばれます。
 このマニュアルで説明されているエラーは、特に明記されていない限り静的エラーです。
 
-チェックされたランタイムエラーは、実装により実行時に検出、報告されます。
+パニックは、実装により実行時に検出、報告されます。
 このようなエラーを報告する方法は、例外を発生させるか、致命的なエラーで強制終了させることです。
 ただし、実装はこれらのランタイムチェックを無効にする手段を提供します。詳細については、[プラグマ](#プラグマPragmas)セクションを参照してください。
 
-チェックされたランタイムエラーの結果が例外になるか、致命的なエラーになるかは実装固有です。従って、次のプログラムは無効です。
+パニックの結果が例外になるか、致命的なエラーになるかは実装固有です。従って、次のプログラムは無効です。
 コードが範囲外の配列アクセスから`IndexError`をキャッチすることを意図している場合でも、コンパイラは、プログラムが致命的なエラーで死ぬことを許可することを選択する場合があります。
 
 ```nim
@@ -81,6 +81,11 @@ try:
 except IndexError:
   echo "invalid index"
 ```
+
+現在の実装では、これらの異なる動作を`--panics:on|off`で切り替えることができます。
+パニックがオンの場合、プログラムはパニックで停止します。
+パニックがオフの場合、ランタイムエラーは例外に変わります。
+`--panics：on`の利点は、より小さなバイナリコードを生成し、コンパイラーがコードを最適化する自由度が高くなることです。
 
 未確認のランタイムエラーは検出することを保証できず、その後の処理について想定外の結果となることがあります。
 安全な言語機能のみが使用され、ランタイムチェックが無効になっていない場合、未チェックのランタイムエラーは発生しません。
@@ -177,8 +182,12 @@ proc foo =
 ```
 
 ### 識別子とキーワード(Identifiers & Keywords)
-Nimの識別子は、文字(letter)で始まり任意の文字(letter)、数字(digit)、アンダースコア`_`を組み合わせた文字列です。
-連続したアンダースコア`__`は使用できません。
+Nimの識別子は、任意の文字(letter)、数字(digit)、アンダースコア`_`からなる文字列で、次の制約があります。
+
+- 最初は文字(letter)から始まります。
+- 最後はアンダースコア`_`で終わってはいけません。
+- 連続したアンダースコア`__`は使用できません。
+
 
 ```nim
 letter ::= 'A'..'Z' | 'a'..'z' | '\x80'..'\xff' #文字
@@ -426,7 +435,7 @@ Nimでは、ユーザー定義の演算子を使用できます。
 
 （文法はターミナルOPRを使用して、ここで定義されている演算子記号を参照します。）
 
-次のキーワードも演算子です:`and or not xor shl shr div mod in notin is isnot of`
+次のキーワードも演算子です:`and or not xor shl shr div mod in notin is isnot of as`
 
 . =, :, :: は一般的な演算子として使用できません。これらは他の表記上の目的に使用されます。
 
@@ -478,7 +487,7 @@ echo 12  / 4  / 8 # 0.375 (12 / 4 = 3.0, then 3 / 8 = 0.375)
 |8|`+ -`|`+ - ~ |`|OP8|
 |7|`&`|`&`|OP7|
 |6|`..`|`.`|OP6|
-|5|`== <= < >= > != in notin is isnot not of`|`= < > !`|OP5|
+|5|`== <= < >= > != in notin is isnot not of as`|`= < > !`|OP5|
 |4|`and`||OP4|
 |3|`or xor`||OP3|
 |2||`@ : ?`|OP2|
@@ -866,8 +875,8 @@ Nimは静的型付けされます。
 順序型は以下の特性があります。
 
 - 順序型は加算かつ順序付けられます。この性質により、順序型において`inc`,`ord`,`dec`などの関数の演算を定義できます。
-- 順序型には最小値があります。最小値よりもさらにカウントダウンしようとすると実行時チェックまたは静的エラーとなります。
-- 順序型には最大値があります。最大値よりもさらにカウントしようとすると実行時チェックまたは静的エラーとなります。
+- 順序型には最小値があります。最小値よりもさらにカウントダウンしようとするとパニックまたは静的エラーとなります。
+- 順序型には最大値があります。最大値よりもさらにカウントしようとするとパニックまたは静的エラーとなります。
 
 整数型、ブール型、文字型、列挙型(及びそれらの部分範囲型)は順序型に属します。
 実装を単純にするため、`uint`型と`uint64`型は順序型ではありません。
@@ -951,7 +960,7 @@ type
 `Subrange`は0から5の整数のみをとれるsubrange型である。
 `PositiveFloat`は0以上の浮動小数点のsubrange型を定義します。
 NaNはいかなる浮動小数点型のSubrange型にも属しません。
-subrange型の変数にそれ以外の値を代入すると、実行時エラーとなります(セマンティック解析中に決まる場合は静的エラー)。
+subrange型の変数にそれ以外の値を代入すると、パニックとなります(セマンティック解析中に決まる場合は静的エラー)。
 ベース型からそのsubrange型の1つへの代入（およびその逆）が許可されます。
 
 subrange型のサイズは、そのベース型と同じサイズです（`Subrange`の例では`int`型）。
@@ -1609,7 +1618,7 @@ Nimは、トレースされた参照とトレースされていない参照を�
 アドレスは常にトレースされていない参照です。
 したがって、`addr`の使用は安全でない機能です。
 
-`.`(タプル/オブジェクトフィールドアクセス演算子)および[] (配列/文字列/シーケンスインデックス演算子)演算子は、参照型の暗黙的な逆参照操作を実行します。
+`.`(タプル/オブジェクトフィールドアクセス演算子)および[] (配列/文字列/シーケンスインデックス演算子)演算子は、参照型の暗黙的なデリファレンス操作を実行します。
 
 ```nim
 type
@@ -1625,7 +1634,7 @@ n.data = 9
 # n[].dataと書く必要はありません; 実際 n[].data は非常に不推奨です!
 ```
 
-ルーチン呼び出しの最初の引数に対しても、自動参照解除が実行されます。
+ルーチン呼び出しの最初の引数に対しても、自動デリファレンスが実行されます。
 ただし、現在この機能は`{.experimental： "implicitDeref".}`を介してのみ有効にする必要があります。
 
 ```nim
@@ -1665,9 +1674,13 @@ type
 
 Nil  
 参照が何も指していない場合、値は`nil`です。
-`nil`は、すべての`ref`および`ptr`タイプのデフォルト値でもあります。
-`nil`の逆参照は、回復不能な致命的なランタイムエラーです。
-参照解除操作`p[]`は、`p`が`nil`でないことを意味します。
+`nil`は、すべての`ref`および`ptr`タイプのデフォルト値です。
+`nil`は他のリテラル値と同様に使用できます。
+例えば、`myRef = nil`の様な割り当てで使用できます。
+
+`nil`のデリファレンスは、回復不能な致命的なランタイムエラーです(パニックではありません)。
+
+正常なデリファレンス操作`p[]`は、`p`が`nil`でないことを意味します。
 これは、実装によって悪用されて、次のようにコードを最適化できます。
 
 ```nim
@@ -2561,6 +2574,36 @@ proc classify(s: string) =
   else: echo "other"
 ```
 
+`case`文は左辺値を生成しないため、次の例は機能しません。
+
+```nim
+type
+  Foo = ref object
+    x: seq[string]
+
+proc get_x(x: Foo): var seq[string] =
+  # doesn't work
+  case true
+  of true:
+    x.x
+  else:
+    x.x
+
+var foo = Foo(x: @[])
+foo.get_x().add("asd")
+```
+
+これは、明示的な`return`を用いることで修正できます。
+
+```nim
+proc get_x(x: Foo): var seq[string] =
+  case true
+  of true:
+    return x.x
+  else:
+    return x.x
+```
+
 ### When statement
 例：
 
@@ -3127,7 +3170,7 @@ assert x == y
 
 #### ループ内でのクロージャーの作成(Creating closures in loops)
 クロージャーは参照によってローカル変数をキャプチャするため、ループ本体内での動作が望ましくないことがよくあります。
-この動作を変更する方法の詳細については[closureScope](https://nim-lang.org/docs/system.html#closureScope.t,untyped)参照。
+この動作を変更する方法の詳細については[closureScope](https://nim-lang.org/docs/system.html#closureScope.t,untyped)と[capture](https://nim-lang.org/docs/sugar.html#capture.m,varargs[typed],untyped)参照。
 
 ### 匿名プロシージャー(Anonymous Procs)
 名前のないプロシージャは、他のプロシージャに渡すラムダ式として使用できます。
@@ -3158,7 +3201,7 @@ proc binarySearch[T](a: openArray[T]; elem: T): int {.noSideEffect.}
 次の組み込みプロシージャは、実装が単純であるため、オーバーロードできません（特別なセマンティックチェックが必要です）。
 
 ```nim
-declared, defined, definedInScope, compiles, sizeOf,
+declared, defined, definedInScope, compiles, sizeof,
 is, shallowCopy, getAst, astToStr, spawn, procCall
 ```
 
@@ -3609,6 +3652,8 @@ if open(f, "numbers.txt"):
 `try`ブランチの型は例外ブランチの型に適合する必要がありますが、`finally`ブランチのタイプは常に`void`でなければなりません。
 
 ```nim
+from strutils import parseInt
+
 let x = try: parseInt("133a")
         except: -1
         finally: echo "hi"
@@ -3710,7 +3755,7 @@ proc main =
 例：
 
 ```nim
-raise newEOS("operating system failed")
+raise newException(IOError, "IO failed")
 ```
 
 配列のインデックス付け、メモリ割り当てなどの組み込み操作は別として、`raise`ステートメントは例外を発生させる唯一の方法です。
@@ -3723,6 +3768,8 @@ raise newEOS("operating system failed")
 すべての例外は`system.Exception`から継承します。
 プログラミングのバグを示す例外は`system.Defect`（`Exception`のサブタイプ）を継承し、厳密にはキャッチできません。
 これらはプロセス全体を終了する操作にマップすることもできるためです。
+パニックが例外に変わった場合、これらの例外は`Defect`から継承されます。
+
 キャッチできるその他のランタイムエラーを示す例外は、`system.CatchableError`（`Exception`のサブタイプ）から継承します。
 
 ### Imported exceptions
@@ -4468,6 +4515,21 @@ var info = something().toSeq
 
 ここでの問題は、`toSeq`がシーケンスに変換する機会を得る前に、このコンテキストではiteratorとしての`something()`がこのコンテキストで呼び出し可能でないことをコンパイラが既に決定していることです。
 
+また、メソッド呼び出し構文でモジュールシンボルに完全修飾識別子を使用することもできません。
+ドット演算子がシンボルにバインドする順序は、これを禁止します。
+
+```nim
+import sequtils
+
+var myItems = @[1,3,3,7]
+let N1 = count(myItems, 3) # OK
+let N2 = sequtils.count(myItems, 3) # fully qualified, OK
+let N3 = myItems.count(3) # OK
+let N4 = myItems.sequtils.count(3) # illegal, `myItems.sequtils` can't be resolved
+```
+
+これは、何らかの理由でプロシージャがモジュール名による明確化を必要とする場合、呼び出しを関数呼び出し構文で記述する必要があることを意味します。
+
 ## マクロ(Macros)
 マクロは、コンパイル時に実行される特別な関数です。
 通常、マクロの入力は、渡されるコードの抽象構文木（AST）です。
@@ -4612,24 +4674,6 @@ else:
 - Else：可能であれば、ジェネリックproc/iteratorを使用します
 - Else：可能であれば、テンプレートを使用します。
 - Else：マクロを使用します。
-
-### プラグマとしてのマクロ(Macros as pragmas)
-ルーチン全体（プロシージャ、イテレータなど）を、プラグマ表記を介してテンプレートまたはマクロに渡すこともできます。
-
-```nim
-template m(s: untyped) = discard
-
-proc p() {.m.} = discard
-```
-
-これは、次の単純な構文変換です。
-
-```nim
-template m(s: untyped) = discard
-
-m:
-  proc p() = discard
-```
 
 ### Forループマクロ(For Loop Macro)
 特別な型`system.ForLoopStmt`の式を唯一の入力パラメーターとして使用するマクロは、`for`ループ全体を書き換えることができます。
@@ -4872,6 +4916,21 @@ echo "$1" % "abc".toUpperAscii
 
 ```nim
 include fileA, fileB, fileC
+```
+
+`include`ステートメントは、トップレベル以外でも使用できます。
+
+```nim
+# Module A
+echo "Hello World!"
+```
+
+```nim
+# Module B
+proc main() =
+  include A
+
+main() # => Hello World!
 ```
 
 #### Module names in imports
@@ -5157,7 +5216,30 @@ doAssert nameToProc[2][1]() == "baz"
 `noreturn` プラグマはプロシージャに戻り値がないことをマークします。
 
 ### 非循環プラグマ(acyclic pragma)
-`acyclic` プラグマは、型宣言に適用されます。非推奨であり、無視されます。
+`acyclic` プラグマをオブジェクト型に使用すると、循環しているように見えても非循環としてマークできます。
+これは、ガベージコレクターがこのタイプのオブジェクトを循環の一部と見なさないようにするための最適化です。
+
+```nim
+type
+  Node = ref NodeObj
+  NodeObj {.acyclic.} = object
+    left, right: Node
+    data: string
+```
+
+refオブジェクトを直接使用する場合：
+
+```nim
+type
+  Node {.acyclic.} = ref object
+    left, right: Node
+    data: string
+```
+
+この例では、ツリー構造は`Node`型で宣言されています。
+型定義は再帰的であり、GCはこのタイプのオブジェクトが循環グラフを形成する可能性があると想定する必要があることに注意してください。
+`acyclic`プラグマは、GCに循環が起こり得ないという情報を渡します。 
+プログラマが実際に循環型であるデータ型に`acyclic`プラグマを使用する場合、メモリリークが発生する可能性がありますが、メモリの安全性は保持されます。
 
 ### ファイナルプラグマ(final pragma)
 `final` のプラグマをオブジェクトタイプに使用して、継承できないことを指定できます。
@@ -5402,26 +5484,6 @@ proc isHexNumber(s: string): bool =
 汎用プロシージャ内で使用される場合、プロシージャのインスタンス化ごとに個別の一意のグローバル変数が作成されます。
 モジュール内で作成されたグローバル変数の初期化の順序は定義されていませんが、それらはすべて、元のモジュールの最上位変数の後、それをインポートするモジュールの変数の前に初期化されます。
 
-### pragmaプラグマ(pragma pragma)
-`pragma` プラグマは、ユーザー定義のプラグマを宣言するために使用できます。
-Nimのテンプレートとマクロはプラグマに影響しないため、これは便利です。
-ユーザー定義のプラグマは、他のすべてのシンボルとは異なるモジュール全体のスコープ内にあります。
-モジュールからインポートすることはできません。
-
-例：
-
-```nim
-when appType == "lib":
-  {.pragma: rtl, exportc, dynlib, cdecl.}
-else:
-  {.pragma: rtl, importc, dynlib: "client.dll", cdecl.}
-
-proc p*(a, b: int): int {.rtl.} =
-  result = a+b
-```
-
-この例では、ダイナミックライブラリからシンボルをインポートするか、ダイナミックライブラリ生成用にシンボルをエクスポートする、 `rtl` hという名前の新しいプラグマが導入されています。
-
 ### 特性のメッセージを無効化(Disabling certain messages)
 Nimは、ユーザーを困らせる可能性のある警告とヒント（「行が長すぎます」）を生成します。
 特定のメッセージを無効にするメカニズムが提供されています。
@@ -5525,6 +5587,35 @@ struct mybitfield {
 };
 ```
 
+### Alignプラグマ(Align pragma)
+alignプラグマは、変数およびオブジェクトフィールドメンバー用です。
+宣言されているエンティティの配置要件を変更します。
+引数は、定数の2の累乗でなければなりません。
+同じ宣言の他のalignプラグマよりも弱い有効な非ゼロアライメントは無視されます。
+型の配置要件よりも弱い配置は無視されます。
+
+```nim
+type
+  sseType = object
+    sseData {.align(16).}: array[4, float32]
+  
+  # every object will be aligned to 128-byte boundary
+  Data = object
+    x: char
+    cacheline {.align(128).}: array[128, char] # over-aligned array of char,
+
+proc main() =
+  echo "sizeof(Data) = ", sizeof(Data), " (1 byte + 127 bytes padding + 128-byte array)"
+  # output: sizeof(Data) = 256 (1 byte + 127 bytes padding + 128-byte array)
+  echo "alignment of sseType is ", alignof(sseType)
+  # output: alignment of sseType is 16
+  var d {.align(2048).}: Data # this instance of data is aligned even stricter
+
+main()
+```
+
+このプラグマは、JSバックエンドには影響しません。
+
 ### 揮発性プラグマ(Volatile pragma)
 揮発性のプラグマは、変数だけのためです。
 C/C ++で意味するものは何でも、変数を`volatile`として宣言します（そのセマンティクスはC/C ++で十分に定義されていません）。
@@ -5589,16 +5680,25 @@ type
 ```
 
 ### PassCプラグマ(PassC pragma)
-`passC`プラグマを使用すると、コマンドラインスイッチ`--passC`を使用する場合と同様に、Cコンパイラに追加のパラメーターを渡すことができます。
+`passc`プラグマを使用すると、コマンドラインスイッチ`--passc`を使用する場合と同様に、Cコンパイラに追加のパラメーターを渡すことができます。
 
 ```nim
-{.passC: "-Wall -Werror".}
+{.passc: "-Wall -Werror".}
 ```
 
 [システムモジュール](https://nim-lang.org/docs/system.html)の`gorge`を使用して、セマンティック解析中に実行される外部コマンドからパラメーターを埋め込むことができます。
 
 ```nim
-{.passC: gorge("pkg-config --cflags sdl").}
+{.passc: gorge("pkg-config --cflags sdl").}
+```
+
+### LocalPasscプラグマ(LocalPassc pragma)
+`localPassc`プラグマを使用して追加のパラメーターをCコンパイラーに渡すことができますが、プラグマが記述されているNimモジュールから生成されるC/C++ファイルに対してのみです。
+
+```nim
+# Module A.nim
+# Produces: A.nim.cpp
+{.localPassc: "-Wall -Werror".} # Passed when compiling A.nim.cpp
 ```
 
 ### PassLプラグマ(PassL pragma)
@@ -5974,6 +6074,28 @@ nim c -d:FooBar=42 foobar.nim
 値が提供されたかどうかを確認するには、`defined(FooBar)`を使用できます。
 構文`-d:flag`は、実際は`-d:flag=true`の単なるショートカットです。
 
+## ユーザー定義プラグマ(User-defined pragmas)
+
+### pragmaプラグマ(pragma pragma)
+`pragma` プラグマは、ユーザー定義のプラグマを宣言するために使用できます。
+Nimのテンプレートとマクロはプラグマに影響しないため、これは便利です。
+ユーザー定義のプラグマは、他のすべてのシンボルとは異なるモジュール全体のスコープ内にあります。
+モジュールからインポートすることはできません。
+
+例：
+
+```nim
+when appType == "lib":
+  {.pragma: rtl, exportc, dynlib, cdecl.}
+else:
+  {.pragma: rtl, importc, dynlib: "client.dll", cdecl.}
+
+proc p*(a, b: int): int {.rtl.} =
+  result = a+b
+```
+
+この例では、ダイナミックライブラリからシンボルをインポートするか、ダイナミックライブラリ生成用にシンボルをエクスポートする、 `rtl` hという名前の新しいプラグマが導入されています。
+
 ###　カスタム注釈(Custom annotations)
 カスタム型付きプラグマを定義することは可能です。
 カスタムプラグマはコード生成に直接影響しませんが、マクロによってその存在を検出できます。
@@ -6038,6 +6160,51 @@ type MyComponent = object
   alpha {.editRange: [0.0..1.0], animatable.}: float32
 ```
 
+### Macroプラグマ(Macro pragmas)
+すべてのマクロとテンプレートもプラグマとして使用できます。
+ルーチン（proc、イテレータなど）、型名、または型式にアタッチできます。
+コンパイラーは、以下の単純な構文変換を実行します。
+
+```nim
+template command(name: string, def: untyped) = discard
+
+proc p() {.command("print").} = discard
+```
+
+これは次のように変換されます。
+
+```nim
+command("print"):
+  proc p() = discard
+```
+
+___
+
+```nim
+type
+  AsyncEventHandler = proc (x: Event) {.async.}
+```
+
+これは次のように変換されます。
+
+```nim
+type
+  AsyncEventHandler = async(proc (x: Event))
+```
+
+___
+
+```nim
+type
+  MyObject {.schema: "schema.protobuf".} = object
+```
+
+これは、定義の左側と右側の両方をキャプチャする`nnkTypeDef` ASTノードを使用した`schema`マクロの呼び出しに変換されます。
+マクロは、typeセクションの元の行を置き換える可能性のある変更された`nnkTypeDef`ツリーを返すことができます。
+
+複数のマクロプラグマが同じ定義に適用されると、コンパイラーはそれらを左から右に適用します。
+各マクロは、前のマクロの出力を入力として受け取ります。
+
 ## 外部関数インターフェース(Foreign function interface)
 NimのFFI（外部関数インターフェイス）は広範であり、他の将来のバックエンド（LLVM/JavaScriptバックエンドなど）に対応する部分のみがここに記載されています。
 
@@ -6085,6 +6252,9 @@ proc p(s: string) {.exportc: "prefix$1".} =
 
 この例では、`p`の外部名は`prefixp`に設定されています。
 使用できるのは`$1`のみで、リテラルのドル記号は`$$`として記述する必要があります。
+
+シンボルも動的ライブラリにエクスポートする必要がある場合は、`exportc`プラグマに加えて、`dynlib`プラグマを使用する必要があります。
+[Dynlib pragma for export](https://nim-lang.org/docs/manual.html#foreign-function-interface-dynlib-pragma-for-export)参照。
 
 ### Externプラグマ(Extern pragma)
 `exportc`または`importc`と同様に、`extern`プラグマは名前のマングリングに影響します。
@@ -6200,8 +6370,6 @@ proc exportme(): int {.cdecl, exportc, dynlib.}
 ```
 
 これは、プログラムが`--app:lib`コマンドラインオプションを使用して動的ライブラリとしてコンパイルされる場合にのみ役立ちます。
-このプラグマは、Windowsターゲットでのコード生成にのみ効果があるため、このプラグマを忘れて、ダイナミックライブラリがMacおよび/またはLinuxでのみテストされる場合、エラーは発生しません。
-Windowsでは、このプラグマは`__declspec(dllexport)`を関数宣言に追加します。
 
 ## スレッド(Threads)
 スレッドサポートを有効にするには、コマンドラインスイッチ`--threads:on`を使用する必要があります。
