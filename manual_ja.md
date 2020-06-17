@@ -3,7 +3,7 @@
 
 原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)
 
-Version：1.2.0
+Version：1.2.2
 
 ## このドキュメントについて
 注：このドキュメントはドラフトです！Nimの機能のいくつかには、より正確な表現が必要な場合があります。このマニュアルは常に適切な仕様に進化しています。 
@@ -1702,7 +1702,7 @@ action()
 
 ### GCされるメモリとptrの混合(Mixing GC'ed memory with ptr)
 トレースされていないオブジェクトにトレースされた参照、文字列、シーケンスなどのトレースされたオブジェクトが含まれている場合は、特に注意する必要があります。
-すべてを適切に解放するには、トレースされていないメモリを手動で解放する前に、組み込みプロシージャ`GCunref`を呼び出す必要があります
+すべてを適切に解放するには、トレースされていないメモリを手動で解放する前に、組み込みプロシージャ`reset`を呼び出す必要があります
 
 ```nim
 type
@@ -1715,13 +1715,13 @@ var d = cast[ptr Data](alloc0(sizeof(Data)))
 d.s = "abc"
 
 # tell the GC that the string is not needed anymore:
-GCunref(d.s)
+reset(d.s)
 
 # free the memory:
 dealloc(d)
 ```
 
-`GCunref`呼び出しがなければ、`d.s`文字列に割り当てられたメモリは決して解放されません。
+`reset`呼び出しがなければ、`d.s`文字列に割り当てられたメモリは決して解放されません。
 この例では、低レベルプログラミングの2つの重要な機能も示しています。
 `sizeof`プロシージャーは、型または値のサイズをバイト単位で返します。
 `cast`演算子は、型システムを回避することができます。
@@ -3436,7 +3436,7 @@ while i < len(a):
 i番目の反復変数の型は、i番目のコンポーネントの型です。
 つまり、forループコンテキストでの暗黙的なタプルのアンパックがサポートされています。
 
-### 暗黙的なアイテム/ペアの呼び出し(Implict items/pairs invocations)
+### 暗黙的なアイテム/ペアの呼び出し(Implicit items/pairs invocations)
 forループ式`e`がイテレータを示さず、forループに変数が1つだけある場合、forループ式は`items(e)`に書き換えられます。すなわち、アイテムイテレータが暗黙的に呼び出されます。
 
 ```nim
@@ -4141,7 +4141,7 @@ g(c, 42)
 # not valid: 'T' is not inferred to be of type 'var int'
 g(v, i)
 
-# also not allowed: explict instantiation via 'var int'
+# also not allowed: explicit instantiation via 'var int'
 g[var int](v, i)
 ```
 
@@ -6139,7 +6139,7 @@ type
 
 マクロモジュールには、カスタムプラグマアクセス`hasCustomPragma`、`getCustomPragmaVal`を簡素化するために使用できるヘルパーが含まれています。
 詳細については、マクロモジュールのドキュメントを参照してください。
-これらのマクロは魔法ではなく、ASTオブジェクト表現を歩いても自分でできないことは何もしません。
+これらのマクロは魔法ではありません。マクロができることは全て、ASTのオブジェクト表現を辿っていくことでも達成できます。
 
 カスタムプラグマを使用したその他の例：
 
