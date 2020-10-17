@@ -3,7 +3,7 @@
 
 原文：[https://nim-lang.org/docs/manual.html](https://nim-lang.org/docs/manual.html)
 
-Version：1.2.2
+Version：1.4.0
 
 ## このドキュメントについて
 注：このドキュメントはドラフトです！Nimの機能のいくつかには、より正確な表現が必要な場合があります。このマニュアルは常に適切な仕様に進化しています。 
@@ -71,14 +71,14 @@ Nimプログラムは、Nimコードを含む1つ以上のテキストソース�
 ただし、実装はこれらのランタイムチェックを無効にする手段を提供します。詳細については、[プラグマ](#プラグマPragmas)セクションを参照してください。
 
 パニックの結果が例外になるか、致命的なエラーになるかは実装固有です。従って、次のプログラムは無効です。
-コードが範囲外の配列アクセスから`IndexError`をキャッチすることを意図している場合でも、コンパイラは、プログラムが致命的なエラーで死ぬことを許可することを選択する場合があります。
+コードが範囲外の配列アクセスから`IndexDefect`をキャッチすることを意図している場合でも、コンパイラは、プログラムが致命的なエラーで死ぬことを許可することを選択する場合があります。
 
 ```nim
 var a: array[0..1, char]
 let i = 5
 try:
   a[i] = 'N'
-except IndexError:
+except IndexDefect:
   echo "invalid index"
 ```
 
@@ -435,7 +435,7 @@ Nimでは、ユーザー定義の演算子を使用できます。
 
 （文法はターミナルOPRを使用して、ここで定義されている演算子記号を参照します。）
 
-次のキーワードも演算子です:`and or not xor shl shr div mod in notin is isnot of as`
+次のキーワードも演算子です:`and or not xor shl shr div mod in notin is isnot of as from`
 
 . =, :, :: は一般的な演算子として使用できません。これらは他の表記上の目的に使用されます。
 
@@ -487,7 +487,7 @@ echo 12  / 4  / 8 # 0.375 (12 / 4 = 3.0, then 3 / 8 = 0.375)
 |8|`+ -`|`+ - ~ |`|OP8|
 |7|`&`|`&`|OP7|
 |6|`..`|`.`|OP6|
-|5|`== <= < >= > != in notin is isnot not of as`|`= < > !`|OP5|
+|5|`== <= < >= > != in notin is isnot not of as from`|`= < > !`|OP5|
 |4|`and`||OP4|
 |3|`or xor`||OP3|
 |2||`@ : ?`|OP2|
@@ -851,7 +851,10 @@ static:
 - closure iterators
 - キャスト演算子
 - 参照(ポインタ)型
-- the FFI
+- FFI
+
+FFIや`cast`を使用するラッパーの使用もまた許可されていません。
+これらのラッパーには、標準ライブラリのラッパーが含まれていることに注意してください。
 
 これらの制限の一部または全ては今後、解除される可能性があります。
 
@@ -988,8 +991,8 @@ IEEE標準では、以下の5種類の浮動小数点例外を定義していま
 - アンダーフロー : MINDOUBLE * MINDOUBLEなどの通常の数値として表現するには小さすぎる結果となる演算。
 - 不正確(inexact) : 2.0/3.0,log(1.1),0.1などの任意精度で表現できない結果となる演算。
 
-IEEE例外は実行中に無視されるか、Nimの例外(FloatInvalidOpError,FloatDivByZeroError,FloatOverflowError,FloatUnderflowError,FloatInexactError)にマップされます。
-これらの例外はFloatingPointError基本クラスから継承されます。
+IEEE例外は実行中に無視されるか、Nimの例外(FloatInvalidOpDefect,FloatDivByZeroDefect,FloatOverflowDefect,FloatUnderflowDefect,FloatInexactDefect)にマップされます。
+これらの例外はFloatingPointDefect基本クラスから継承されます。
 
 Nimは、IEEE例外を無視するかNim例外をトラップするかを制御するプラグマnanChecksおよびinfChecksを提供します。
 
@@ -997,11 +1000,11 @@ Nimは、IEEE例外を無視するかNim例外をトラップするかを制御�
 {.nanChecks: on, infChecks: on.}
 var a = 1.0
 var b = 0.0
-echo b / b # raises FloatInvalidOpError
-echo a / b # raises FloatOverflowError
+echo b / b # raises FloatInvalidOpDefect
+echo a / b # raises FloatOverflowDefect
 ```
-現在の実装では、`FloatDivByZeroError`と`FloatInexactError`は発生しません。
-`FloatDivByZeroError`の代わりに`FloatOverflowError`が発生します。
+現在の実装では、`FloatDivByZeroDefect`と`FloatInexactDefect`は発生しません。
+`FloatOverflowDefect`の代わりに`FloatDivByZeroDefect`が発生します。
 nanChecksプラグマとinfChecksプラグマの組み合わせのショートカットであるfloatChecksプラグマもありますが、デフォルトでオフになっています
 
 `floatChecks`プラグマの影響を受ける操作は、浮動小数点型の`+`,`-`,`*`,`/`演算子のみです。
@@ -1199,6 +1202,8 @@ var newstr: string = $cstr
 この配列式の要素の型は、最初の要素の型から推測されます。
 この配列式の他の全ての要素は最初の要素の型に暗黙的に変換可能である必要があります。
 
+配列型は`array[size, T]`構文でデイぎできます。また、`array[lo..hi, T]`構文を使いことで0以外からインデックスを始めることができます。
+
 シーケンスは配列と似ていますが、動的な長さを持ち、実行時に変更される場合があります（文字列など）。
 シーケンスは拡張可能な配列として実装され、アイテムが追加されるとメモリの一部を割り当てます。
 シーケンス`S`は常に0から`len(S)-1`の整数でインデックス付けされ、その境界がチェックされます。
@@ -1349,8 +1354,8 @@ typedef struct {
 ### タプルとオブジェクト型(Tuples and object types)
 タプルまたはオブジェクト型の変数は、異種のストレージコンテナです。
 タプルまたはオブジェクトは、型のさまざまな名前付きフィールドを定義します。
-タプルは、フィールドの順序も定義します。
-タプルは、オーバーヘッドがなく、抽象化の可能性がほとんどない異種ストレージ型を対象としています。
+タプルは、フィールドの辞書式順序も定義します。
+タプルは、抽象化がほとんどない異種ストレージ型であることが意図されています。
 コンストラクター`()`を使用してタプルを作成できます。
 コンストラクター内のフィールドの順序は、タプルの定義の順序と一致する必要があります。
 同じ型の同じフィールドを同じ順序で指定する場合、異なるタプル型は同値です。
@@ -1368,8 +1373,10 @@ type
 var
   person: Person
 person = (name: "Peter", age: 30)
+echo person.name
 # the same, but less readable:
 person = ("Peter", 30)
+echo person[0]
 ```
 
 括弧と末尾のコンマを使用して、名前のないフィールドが1つあるタプルを作成できます。
@@ -1391,12 +1398,12 @@ echoUnaryTuple (1,)
 type
   Person = tuple   # type representing a person
     name: string   # a person consists of a name
-    age: natural   # and an age
+    age: Natural   # and an age
 ```
 
 オブジェクトは、タプルにはない多くの機能を提供します。
-オブジェクトは、継承と情報の隠蔽を提供します。
-オブジェクトは実行時に型にアクセスできるため、`of`演算子を使用してオブジェクトの型を判別できます。
+オブジェクトは継承と、他のモジュールからフィールドを非表示にする機能を提供します。
+継承が有効になっているオブジェクトには、実行時にタイプに関する情報があるため、`of`演算子を使用してオブジェクトの型を判別できます。
 `of`演算子はJavaの`instanceof`に似ています。
 
 ```nim
@@ -1418,6 +1425,16 @@ assert(student of Person) # also true
 タプルとは対照的に、異なるオブジェクト型が同値になることはありません。
 継承元を持たないオブジェクトは暗黙的にfinalであるため、非表示型フィールドはありません。
 `inheritable`プラグマを使用して、`system.RootObj`とは別に新しいオブジェクトルートを導入できます。
+
+```nim
+type
+  Person = object # example of a final object
+    name*: string
+    age: int
+  
+  Student = ref object of Person # Error: inheritance only works with non-final objects
+    id: int
+```
 
 ### オブジェクト構築(Object construction)
 オブジェクトは、構文`T(fieldA: valueA, fieldB: valueB, ...)`を持つオブジェクト構築式を使用して作成することもできます。
@@ -1462,7 +1479,7 @@ var n = Node(kind: nkIf, condition: nil)
 n.thenPart = Node(kind: nkFloat, floatVal: 2.0)
 
 # 次のステートメントはn.kindの値が適合せず、 `` nkString``ブランチがアクティブではないため、
-# `FieldError`例外を発生させます:
+# `FieldDefect`例外を発生させます:
 n.strVal = ""
 
 # 無効: アクティブなオブジェクトブランチを変更しようとしています:
@@ -1635,19 +1652,7 @@ n.data = 9
 ```
 
 ルーチン呼び出しの最初の引数に対しても、自動デリファレンスが実行されます。
-ただし、現在この機能は`{.experimental： "implicitDeref".}`を介してのみ有効にする必要があります。
-
-```nim
-{.experimental: "implicitDeref".}
-
-proc depth(x: NodeObj): int = ...
-
-var
-  n: Node
-new(n)
-echo n.depth
-# n[].depth と書く必要もありません
-```
+ただし、これは実験的な機能であり、[ここ](https://nim-lang.org/docs/manual_experimental.html#type-bound-operations)で説明します。
 
 構造型チェックを簡素化するために、再帰タプルは無効です。
 
@@ -1733,28 +1738,6 @@ dealloc(d)
 したがって、`d.s`は文字列割り当てが処理できるバイナリゼロに初期化されます。
 ガベージコレクションされたデータをアンマネージメモリと混合する場合、このような低レベルの詳細を知る必要があります。
 
-### Not nil annotation
-nilが有効な値であるすべての型に`not nil`注釈(annotation)を付けて、nilを有効な値から除外できます。
-(訳者注：下記コードをWandboxのNim1.0.2で試そうとした所、`{.experimental: "notnil".}`プラグマを要求されたため、要検証)
-
-```nim
-type
-  PObject = ref TObj not nil
-  TProc = (proc (x, y: int)) not nil
-
-proc p(x: PObject) =
-  echo "not nil"
-
-# compiler catches this:
-p(nil)
-
-# and also this:
-var x: PObject
-p(x)
-```
-コンパイラは、すべてのコードパスが、nilできないポインターを含む変数を初期化することを保証します。
-この解析の詳細は、まだここで指定する必要があります。
-
 ### プロシージャー型(Procedural type)
 プロシージャー型は、内部的にはプロシージャーへのポインタです。
 `nil`は、プロシージャー型の変数に許可される値です。
@@ -1820,6 +1803,9 @@ Nimはインライン化せず、これをCコンパイラーに任せること�
 
 - fastcall
 fastcallは、Cコンパイラごとに異なることを意味を持ちます。Cの`__fastcall`が意味するものは何でも取得できます。
+
+- thiscall
+これは、Microsoftによって指定されたthiscall呼び出し規約であり、x86アーキテクチャのC++クラスメンバー関数で使用されます。
 
 - syscall
 syscallの規則は、Cの`__syscall`と同じです。割り込みに使用されます。
@@ -2179,7 +2165,7 @@ x = chr.toInt
 echo x # => 97
 ```
 
-`a`が左辺値で`typeEqualsOrDistinct(T,type(a))`が成り立つ場合、型変換`T(a)`は左辺値です。
+`a`が左辺値で`typeEqualsOrDistinct(T,typeof(a))`が成り立つ場合、型変換`T(a)`は左辺値です。
 
 ### 割り当ての互換性(Assignment compatibility)
 `a`が左辺値で`isImplicitlyConvertible(b.typ, a.typ)`が成り立つとき、式`b`は式`a`に割り当てることができます。
@@ -2268,8 +2254,8 @@ var ri: ref int
 gen(ri) # "ref T"
 ```
 
-### `var T`に基づくオーバーロード
-仮パラメータ`f`が通常の型チェックに加えて`var T`型の場合、引数は左辺値であることがチェックされます。`var T`は、`T`だけであるよりもよく一致します。
+### `var T` / `out T`に基づくオーバーロード解決(Overloading based on 'var T' / 'out T')
+仮パラメータ`f`が通常の型チェックに加えて`var T`型(または`out T`型)の場合、引数は左辺値であることがチェックされます。`var T`(または`out T`型)は、`T`だけであるよりもよく一致します。
 
 ```nim
 proc sayHi(x: int): string =
@@ -2286,6 +2272,15 @@ proc sayHello(x: int) =
 
 sayHello(3) # 3
             # 13
+```
+
+左辺値は`var T`と`out T`に等しく一致するため、以下はあいまいになります。
+
+```nim
+proc p(x: out string) = x = ""
+proc p(x: var string) = x = ""
+var v: string
+p(v) # ambiguous
 ```
 
 ### untypedの遅延型解決
@@ -2345,6 +2340,7 @@ discard p(3, 4) # `p`の戻り値を破棄
 ```
 
 `discard`ステートメントは式の副作用について評価を行い、結果の値を破棄します。
+そのため、この値を無視しても問題が発生しないことがわかっている場合にのみ使用してください。
 
 discardステートメントを使用せずにプロシージャの戻り値を無視すると、静的エラーになります。
 呼び出されたproc/iteratorがdiscardableプラグマで宣言されている場合、戻り値は暗黙的に無視できます。
@@ -2450,6 +2446,10 @@ proc p() =
 新しい値を割り当てることはできません。
 
 let変数では、通常の変数と同じプラグマを使用できます。
+
+letステートメントは作成後に不変であるため、宣言時に値を定義する必要があります。
+唯一の例外は`.importc.`プラグマ（または他の`.importX.`プラグマ）をが適用される場合です。
+この場合、値はネイティブコード（通常はC / C++ のconst）から取得されると期待されます。
 
 ### Tuple unpacking
 `var`または`let`ステートメントでタプルのアンパックを実行できます。
@@ -2837,6 +2837,7 @@ proc mixedMode(c, n; x, y: int) =
 
 ### If expression
 `if expression `はif文とほとんど同じですが、式です。
+この機能は他の言語の三項演算子に似ています。
 
 ```nim
 var y = if x > 8: 9 else: 10
@@ -2918,14 +2919,25 @@ procVar("a")
 注：歴史的に、操作は未チェックで、変換は時々チェックされていましたが、このドキュメントのリビジョン1.0.4および言語実装から、変換も常に未チェックになりました。
 
 ### 型キャスト(Type casts)
-例：
+型キャストは、式のビットパターンを別の型であるかのように解釈する粗雑なメカニズムです。
+型キャストは低レベルのプログラミングにのみ必要であり、本質的にアンセーフです。
 
 ```nim
 cast[int](x)
 ```
 
-型キャストは、式のビットパターンを別の型であるかのように解釈する粗雑なメカニズムです。
-型キャストは低レベルのプログラミングにのみ必要であり、本質的にアンセーフです。
+キャストのターゲット型は具象型である必要があります。
+例えば、型クラス（非具象）であるターゲット型は無効になります。
+
+```nim
+type Foo = int or float
+var x = cast[Foo](1) # Error: cannot cast to a non concrete type: 'Foo'
+```
+
+前のセクションで説明したように、型キャストを型変換と混同しないでください。
+型変換とは異なり、型キャストでは、キャストされるデータの基になるビットパターンを変更できません
+（ただし、ターゲットタイプのサイズがソースタイプと異なる場合があります）。
+キャストは、他の言語のtype punningやC++の`reinterpret_cast `および`bit_cast `機能に似ています。
 
 ### アドレス演算子(The addr operator)
 `addr`演算子は、左辺値のアドレスを返します。
@@ -3329,14 +3341,68 @@ proc foo(other: Y; container: var X): var T from container
 ここで、`var T from container`は、locationが2番目のパラメータ（この場合はcontainerと呼ばれる）から派生したことを明示的に公開します。
 構文`var T from p`は、`varTy[T, 1]`と互換性のない型`varTy[T, 2]`を指定します。
 
+### NRVO
+注：このセクションでは現在の実装について説明します。
+言語仕様のこの部分は今後変更されます。
+詳しくはを[ここ](https://github.com/nim-lang/RFCs/issues/230)を参照。
+
+戻り値は、ルーチンの本体内で特別な結果変数として表されます。
+これにより、C++の"named return value optimization"（NRVO）によく似たメカニズムが可能になります。
+NRVOは`let/var dest = p(args)` (`dest`の定義)や`dest = p(args)` (`dest`への代入)において`p`内の`result`が`dest`に直接影響することを意味します。
+これは`dest = p(args)`を`p'(args, dest)`に書き換えることで実現されます。
+ここで`p'`は`void`を返し、`result`を表す可変パラメータを受け取る`p`の変形版です。
+
+以下は正式な実装ではありません。
+
+```nim
+proc p(): BigT = ...
+
+var x = p()
+x = p()
+
+# is roughly turned into:
+
+proc p(result: var BigT) = ...
+
+var x; p(x)
+p(x)
+```
+
+`T`が`p`の返り値の方として、NRVOは`T`が`siseof(T) >= N`の時（`N`は実装依存）、言い換えると`T`が大きな構造体の時に適用されます。
+
+`p`が例外を発生させるかどうかに関係なく、NRVOは適用されます。
+これは、観測可能なふるまいの違いを起こします。
+
+```nim
+type
+  BigT = array[16, int]
+
+proc p(raiseAt: int): BigT =
+  for i in 0..high(result):
+    if i == raiseAt: raise newException(ValueError, "interception")
+    result[i] = i
+
+proc main =
+  var x: BigT
+  try:
+    x = p(8)
+  except ValueError:
+    doAssert x == [0, 1, 2, 3, 4, 5, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0]
+
+main()
+```
+
+ただし、現在の実装では、これらの場合に警告が生成されます。
+この警告に対処するには、さまざまな方法があります。
+- `{.push warning[ObservableStores]: off.}`... `{.pop.}`によって警告を無効化します。次に`p`が`result`へのストアが発生する前にのみ例外を発生させることを確かめる必要があります。
+- 一時ヘルパー変数を使用します。例えば`x = p(8)`の代わりに`let tmp = p(8); x = tmp`を使用します。
+
 ### 添字演算子のオーバーロード(Overloading of the subscript operator)
 配列/openarrays/sequencesの添え字演算子`[]`はオーバーロードできます。
 
-## マルチメソッド(Multi-methods)
-注：Nim 0.20以降、マルチメソッドを使用するには、コンパイル時に`--multimethods:on`を明示的に渡す必要があります。
-
+## メソッド(method)
 プロシージャは常に静的ディスパッチを使用します。
-マルチメソッドは動的ディスパッチを使用します。
+メソッドは動的ディスパッチを使用します。
 動的ディスパッチがオブジェクトで機能するには、オブジェクトが参照型である必要があります。
 
 ```nim
@@ -3377,6 +3443,32 @@ baseプラグマは、maseメソッドmがmの呼び出しが引き起こす可�
 注：メソッドのコンパイル時実行は（まだ）サポートされていません。
 
 注：Nim 0.20以降、ジェネリックメソッドは廃止されました。
+
+### マルチメソッド(Multi-methods)
+注：Nim 0.20以降、マルチメソッドを使用するには、コンパイル時に`--multimethods:on`を明示的に渡す必要があります。
+
+マルチメソッドでは、オブジェクト型を持つすべてのパラメータがディスパッチに使用されます。
+
+```nim
+type
+  Thing = ref object of RootObj
+  Unit = ref object of Thing
+    x: int
+
+method collide(a, b: Thing) {.inline.} =
+  quit "to override!"
+
+method collide(a: Thing, b: Unit) {.inline.} =
+  echo "1"
+
+method collide(a: Unit, b: Thing) {.inline.} =
+  echo "2"
+
+var a, b: Unit
+new a
+new b
+collide(a, b) # output: 2
+```
 
 ### procCallによる動的メソッド解決の禁止(Inhibit dynamic method resolution via procCall)
 組み込みのsystem.procCallを使用して、動的メソッドの解決を禁止できます。
@@ -3621,7 +3713,7 @@ if open(f, "numbers.txt"):
     var a = readLine(f)
     var b = readLine(f)
     echo "sum: " & $(parseInt(a) + parseInt(b))
-  except OverflowError:
+  except OverflowDefect:
     echo "overflow!"
   except ValueError:
     echo "could not convert string to integer"
@@ -3709,8 +3801,7 @@ except:
 ```
 
 ### Custom exceptions(カスタム例外)
-カスタム例外を作成することが可能です。これにより、nimによって発生した例外と独自のコードからの例外を簡単に区別できます。
-
+カスタム例外を作成することが可能です。
 カスタム例外はカスタム型です。
 
 ```nim
@@ -3760,7 +3851,7 @@ raise newException(IOError, "IO failed")
 
 配列のインデックス付け、メモリ割り当てなどの組み込み操作は別として、`raise`ステートメントは例外を発生させる唯一の方法です。
 例外名が指定されていない場合、現在の例外が再発生します。
-再発生する例外がない場合、ReraiseError例外が発生します。
+再発生する例外がない場合、ReraiseDefect例外が発生します。
 したがって、`raise`ステートメントは常に例外を発生させます。
 
 ### Exception hierarchy
@@ -3779,15 +3870,39 @@ raise newException(IOError, "IO failed")
 
 ```nim
 type
-  std_exception {.importcpp: "std::exception", header: "<exception>".} = object
+  CStdException {.importcpp: "std::exception", header: "<exception>", inheritable.} = object
+    ## does not inherit from `RootObj`, so we use `inheritable` instead
+  CRuntimeError {.requiresInit, importcpp: "std::runtime_error", header: "<stdexcept>".} = object of CStdException
+    ## `CRuntimeError` has no default constructor => `requiresInit`
+proc what(s: CStdException): cstring {.importcpp: "((char *)#.what())".}
+proc initRuntimeError(a: cstring): CRuntimeError {.importcpp: "std::runtime_error(@)", constructor.}
+proc initStdException(): CStdException {.importcpp: "std::exception()", constructor.}
 
-proc what(s: std_exception): cstring {.importcpp: "((char *)#.what())".}
+proc fn() =
+  let a = initRuntimeError("foo")
+  doAssert $a.what == "foo"
+  var b: cstring
+  try: raise initRuntimeError("foo2")
+  except CStdException as e:
+    doAssert e is CStdException
+    b = e.what()
+  doAssert $b == "foo2"
+  
+  try: raise initStdException()
+  except CStdException: discard
+  
+  try: raise initRuntimeError("foo3")
+  except CRuntimeError as e:
+    b = e.what()
+  except CStdException:
+    doAssert false
+  doAssert $b == "foo3"
 
-try:
-  raise std_exception()
-except std_exception as ex:
-  echo ex.what()
+fn()
 ```
+
+注：`getCurrentException()`と`getCurrentExceptionMsg()`はC++からインポートした例外には使用できません。
+`except ImportedException as x:`構文を使用する必要があり、例外の詳細の取得は、`x`オブジェクトの機能に依存します。
 
 ## エフェクトシステム(Effect system)
 
@@ -3855,6 +3970,25 @@ proc use() {.raises: [].} =
 ```
 
 そのため、多くの場合、コールバックによってコンパイラーのエフェクト分析が過度に保守的になることはありません。
+
+`systemDefect`を継承する例外は`.raises: []`とトラッキングメカニズムによって追跡されません。
+これは組み込み演算子とより一貫性があります。
+以下は有効です。
+
+```nim
+proc mydiv(a, b): int {.raises: [].} =
+  a div b # can raise an DivByZeroDefect
+```
+
+次もまた有効です。
+
+```nim
+proc mydiv(a, b): int {.raises: [].} =
+  if b == 0: raise newException(DivByZeroDefect, "division by zero")
+  else: result = a div b
+```
+
+この理由は`DivByZeroDefect`が`Defect`を継承し、`--panics:on`によって回復不能なエラーとなるためです。（言語バージョン1.4以降）
 
 ### タグトラッキング(Tag tracking)
 例外追跡は、Nimのエフェクトシステムの一部です。
@@ -4124,7 +4258,7 @@ p(int, 4)
 ```
 
 ### 一般的な推論の制限(Generic inference restrictions)
-タイプ`var T`および`typedesc [T]`は、一般的なインスタンス化では推測できません。以下は許可されていません。
+タイプ`var T`、`out T`および`typedesc[T]`は、一般的なインスタンス化では推測できません。以下は許可されていません。
 
 ```nim
 proc g[T](f: proc(x: T); x: T) =
@@ -4290,36 +4424,26 @@ withFile(txt, "ttempl3.txt", fmWrite):  # special colon
 
 ```nim
 template t(body: typed) =
+  proc p = echo "hey"
   block:
     body
 
 t:
-  var i = 1
-  echo i
-
-t:
-  var i = 2  # fails with 'attempt to redeclare i'
-  echo i
+  p()  # fails with 'undeclared identifier: p'
 ```
 
-上記のコードは、`i`が既に宣言されているという謎のエラーメッセージで失敗します。
-これは`var i = ...`が`body`パラメータに渡される前に（bodyがtypedであるため）型チェックされる必要があり、Nimでの型チェックがシンボル検索を意味するためです。
-シンボルの検索を成功させるには、現在の（つまり外側の）スコープに`i`を追加する必要があります。
-型チェックの後、これらのシンボルテーブルへの追加はロールバックされません（良かれ悪しかれ）。
+上記のコードは、`p`が既に宣言されていないというエラーメッセージで失敗します。
+これは`p()`本体が`body`パラメータに渡される前に型チェックされる必要があり、Nimでの型チェックがシンボル検索を意味するためです。
 同じコードでも`untyped`であれば、テンプレートに渡されるbodyは型チェックされないため機能します。
 
 ```nim
 template t(body: untyped) =
+  proc p = echo "hey"
   block:
     body
 
 t:
-  var i = 1
-  echo i
-
-t:
-  var i = 2  # compiles
-  echo i
+  p()  # compiles
 ```
 
 ### untypedの可変長引数(Varargs of untyped)
@@ -4546,7 +4670,6 @@ let N4 = myItems.sequtils.count(3) # illegal, `myItems.sequtils` can't be resolv
 - マクロによって返されたASTに他のマクロ呼び出しが含まれている場合、このプロセスが繰り返されます。
 
 マクロは高度なコンパイル時コード変換を可能にしますが、Nimの構文を変更することはできません。
-ただし、Nimの構文はいずれにせよ十分な柔軟性があるため、これは実際の制限ではありません。
 
 ### デバッグ例(Debug Example)
 次の例は、可変数の引数を受け入れる強力な`debug`コマンドを実装しています。
@@ -4675,18 +4798,19 @@ else:
 - Else：可能であれば、テンプレートを使用します。
 - Else：マクロを使用します。
 
-### Forループマクロ(For Loop Macro)
+### Forループマクロ(for loop macro)
 特別な型`system.ForLoopStmt`の式を唯一の入力パラメーターとして使用するマクロは、`for`ループ全体を書き換えることができます。
 
 ```nim
 import macros
-{.experimental: "forLoopMacros".}
 
 macro enumerate(x: ForLoopStmt): untyped =
   expectKind x, nnkForStmt
-  # 最初のforループ変数を取り除き、整数カウンターとして使用します:
+  # check if the starting count is specified:
+  var countStart = if x[^2].len == 2: newLit(0) else: x[^2][1]
   result = newStmtList()
-  result.add newVarStmt(x[0], newLit(0))
+  # we strip off the first for loop variable and use it as an integer counter:
+  result.add newVarStmt(x[0], countStart)
   var body = x[^1]
   if body.kind != nnkStmtList:
     body = newTree(nnkStmtList, body)
@@ -4694,24 +4818,22 @@ macro enumerate(x: ForLoopStmt): untyped =
   var newFor = newTree(nnkForStmt)
   for i in 1..x.len-3:
     newFor.add x[i]
-  # enumerate(X)を 'X'に変換します
-  newFor.add x[^2][1]
+  # transform enumerate(X) to 'X'
+  newFor.add x[^2][^1]
   newFor.add body
   result.add newFor
-  # マクロ全体をブロックでラップして、新しいスコープを作成します
+  # now wrap the whole macro in a block to create a new scope
   result = quote do:
     block: `result`
 
 for a, b in enumerate(items([1, 2, 3])):
   echo a, " ", b
 
-# マクロをブロックにラップせずに、再定義エラーを避けるために、
-# ここで「a」と「b」に異なる名前を選択する必要があります
-for a, b in enumerate([1, 2, 3, 5]):
+# without wrapping the macro in a block, we'd need to choose different
+# names for `a` and `b` here to avoid redefinition errors
+for a, b in enumerate(10, [1, 2, 3, 5]):
   echo a, " ", b
 ```
-
-現在、forループマクロは`{.experimental: "forLoopMacros".}`を使用して明示的に有効にする必要があります。
 
 ## 特別な型(Special Types)
 
@@ -5075,55 +5197,6 @@ var x = 4
 write(stdout, x) # あいまいでない: モジュールCのxが使用される
 ```
 
-#### コードの並べ替え(Code reordering)
-注：コードの並べ替えは実​​験的なものであり、`{.experimental.}`プラグマで有効にする必要があります。
-
-コードの並べ替え機能は、プロシージャ、テンプレート、マクロ定義をトップレベルのスコープでの変数宣言と初期化とともに暗黙的に並べ替えることができるため、プログラマーは定義を正しく並べ替えたり、
-前方宣言を強制させられる心配をせずに済みます。
-
-例：
-
-```nim
-{.experimental: "codeReordering".}
-
-proc foo(x: int) =
-  bar(x)
-
-proc bar(x: int) =
-  echo(x)
-
-foo(10)
-```
-
-変数も並べ替えることができます。
-初期化される変数（宣言と代入が同じ行でされる変数）は初期化ステートメント全体を並べ替えることができます。。
-トップレベルで実行されるコードに注意してください。
-
-```nim
-{.experimental: "codeReordering".}
-
-proc a() =
-  echo(foo)
-
-var foo = 5
-
-a() # outputs: "5"
-```
-
-並べ替えは、最上位スコープのシンボルに対してのみ機能することに注意することが重要です。
-したがって、以下はコンパイルに失敗します。
-
-```nim
-{.experimental: "codeReordering".}
-
-proc a() =
-  b()
-  proc b() =
-    echo("Hello!")
-
-a() #エラー
-```
-
 ## コンパイラメッセージ(Compiler Messages)
 Nimコンパイラーは、ヒント、警告、エラーメッセージなど、さまざまな種類のメッセージを出力します。コンパイラが静的エラーを検出すると、エラーメッセージが表示されます。
 
@@ -5151,7 +5224,7 @@ proc thing(x: bool) {.deprecated: "thongを代わりに使用してください"
 ### 副作用なしプラグマ(noSideEffect pragma)
 `noSideEffect` プラグマは、procやiteratorが副作用を持たないことをマークするために使用されます。
 これは、procやiteratorがパラメーターから到達可能な場所のみを変更し、戻り値が引数のみに依存することを意味します。
-`var T` または `ref T` または `ptr T` のタイプを持つパラメーターがない場合、これは副作用がないことを意味します。
+`var T` または`out T` または `ref T` または `ptr T` のタイプを持つパラメーターがない場合、これは副作用がないことを意味します。
 コンパイラがこれを検証できない場合にprocまたはiteratorに副作用なしのマークを付与すると静的なエラーとなります。
 
 特別なセマンティックルールとして、組み込みの [`debugEcho`](https://nim-lang.org/docs/system.html#debugEcho,varargs[typed,]) は副作用がないように見せかけるため、
@@ -5163,11 +5236,11 @@ proc thing(x: bool) {.deprecated: "thongを代わりに使用してください"
 func `+` (x, y: int): int
 ```
 
-コンパイラの副作用解析を上書きするには、 `{.noSideEffect.}` プラグマブロックを使用できます。
+コンパイラの副作用解析を上書きするには、 `{.noSideEffect.}` `cast` プラグマブロックを使用できます。
 
 ```nim
 func f() =
-  {.noSideEffect.}:
+  {.cast(noSideEffect).}:
     echo "test"
 ```
 
@@ -5385,23 +5458,6 @@ vm()
 例が示すように、 `computedGoto` はインタープリターに最も役立ちます。
 基になるバックエンド（Cコンパイラ）が計算されたgoto拡張機能をサポートしない場合、
 プラグマは単に無視されます。
-
-### unrollプラグマ(unroll pragma)
-`unroll` プラグマは、実行効率のためにforループまたはwhileループを展開する必要があることをコンパイラーに伝えるために使用できます。
-
-```nim
-proc searchChar(s: string, c: char): int =
-  for i in 0 .. s.high:
-    {.unroll: 4.}
-    if s[i] == c: return i
-  result = -1
-```
-
-上記の例では、検索ループは係数4によって展開されます。
-展開係数も省略できます。
-その後、コンパイラーは適切なアンロール係数を選択します。
-
-注：現在、コンパイラはこのプラグマを認識しますが、無視します。
 
 ### 即時プラグマ(immediate pragma)
 `immediate` プラグマは廃止されました。
@@ -5671,6 +5727,14 @@ type
 注：NimはSHA1チェックサムを計算し、ファイルが変更された場合にのみファイルを再コンパイルします。
 `-f`コマンドラインオプションを使用して、ファイルを強制的に再コンパイルできます。
 
+バージョン1.4以降では`compile`プラグマは次の構文で仕様できます。
+
+```nim
+{.compile("myfile.cpp", "--custom flags here").}
+```
+
+例からわかるように、この新しいバリアントでは、ファイルの再コンパイル時にCコンパイラに渡されるカスタムフラグを使用できます。
+
 ### リンクプラグマ(Link pragma)
 
 `link`プラグマは、プロジェクトに追加のファイルをリンクするために使用することができます。
@@ -5716,7 +5780,7 @@ type
 
 ###　エミットプラグマ(Emit pragma)
 `emit`プラグマは直接コンパイラのコードジェネレータの出力に影響を与えるために使用することができます。
-そのため、コードを他のコードジェネレーター/バックエンドに移植できなくなります。
+その場合、コードを他のコードジェネレーター/バックエンドに移植できなくなります。
 その使用は非常に推奨されません！
 ただし、C++またはObjective Cコードとのインターフェイスには非常に便利です。
 
@@ -6217,6 +6281,18 @@ NimのFFI（外部関数インターフェイス）は広範であり、他の�
 proc printf(formatstr: cstring) {.header: "<stdio.h>", importc: "printf", varargs.}
 ```
 
+`importc`を`let`ステートメントに適用すると、その値を省略できます。
+この値は、Cから取得されると予想されます。
+これによりCの`const`をインポートできます。
+
+```nim
+{.emit: "const int cconst = 42;".}
+
+let cconst {.importc, nodecl.}: cint
+
+assert cconst == 42
+```
+
 このプラグマは、jsオブジェクトおよび関数のためのjsバックエンドでも機能するように過去に悪用されていることに注意してください。
 他のバックエンドは、同じ名前で同じ機能を提供します。また、ターゲット言語がCに設定されていない場合、他のプラグマを使用できます。
 
@@ -6347,9 +6423,9 @@ import os
 
 proc getDllName: string =
   result = "mylib.dll"
-  if existsFile(result): return
+  if fileExists(result): return
   result = "mylib2.dll"
-  if existsFile(result): return
+  if fileExists(result): return
   quit("could not load dynamic library")
 
 proc myImport(s: cstring) {.cdecl, importc, dynlib: getDllName().}
@@ -6403,7 +6479,7 @@ Cからインポートされるルーチンは、常に`gcsafe`であると想�
 GCセーフチェックを無効にするために、`--threadAnalysis:off`コマンドラインスイッチを使用できます。
 これは、古いコードから新しいスレッドモデルへの移植作業を容易にするための一時的な回避策です。
 
-コンパイラのgcsafety解析をオーバーライドするために、`{.gcsafe.} `プラグマブロックを使用できます。
+コンパイラのgcsafety解析をオーバーライドするために、`{.cast(gcsafe).} `プラグマブロックを使用できます。
 
 ```nim
 var
@@ -6411,13 +6487,13 @@ var
   perThread {.threadvar.}: string
 
 proc setPerThread() =
-  {.gcsafe.}:
+  {.cast(gcsafe).}:
     deepCopy(perThread, someGlobal)
 ```
 
-今後の方向性：
+以下も参照して下さい：
 
-- GCされる共有メモリが提供されるかもしれません。
+- [共有ヒープメモリ管理](https://nim-lang.org/docs/gc.html)
 
 ### Threadvarプラグマ(Threadvar pragma)
 変数は`threadvar`プラグマでマークできます。
